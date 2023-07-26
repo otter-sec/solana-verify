@@ -1,0 +1,17 @@
+[package]
+name = "otter-solana-macro"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kani = { workspace = true, optional = true }
+otter-solana-macro-core = { path = "../macro_core" }
+
+[features]
+default = []
+kani = ["dep:kani"]
+verify = ["otter-solana-macro-core/verify"]
+anchor = ["otter-solana-macro-core/anchor"]
+
+[lib]
+proc-macro = true

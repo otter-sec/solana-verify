@@ -1,0 +1,19 @@
+[package]
+name = "onchor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+borsh = { workspace = true }
+hex = { workspace = true }
+kani = { workspace = true, optional = true }
+otter-solana-macro = { path = "../macro", features = ["anchor"] }
+otter-solana-program = { path = "../program" }
+thiserror = { workspace = true }
+
+[features]
+default = []
+kani = ["dep:kani", "otter-solana-program/kani", "otter-solana-macro/kani"]
+
+[lib]
+path = "src/lib.rs"

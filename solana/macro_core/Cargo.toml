@@ -1,0 +1,20 @@
+[package]
+name = "otter-solana-macro-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anchor-syn = { path = "../../dependencies/anchor/lang/syn", features = ["hash"] }
+anyhow = { workspace = true }
+darling = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
+
+[features]
+default = []
+verify = []
+anchor = []
+
+[lib]
+path = "src/lib.rs"

@@ -1,0 +1,16 @@
+[package]
+name = "otter-solana-program"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+borsh = { workspace = true }
+hex = { workspace = true }
+kani = { workspace = true, optional = true }
+num-traits = { workspace = true }
+otter-solana-macro = { path = "../macro" }
+
+[features]
+kani = ["dep:kani"]
+verify = ["otter-solana-macro/verify"]

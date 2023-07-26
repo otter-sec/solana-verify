@@ -1,0 +1,6 @@
+[submodule "dependencies/kani"]
+	path = dependencies/kani
+	url = git@github.com:model-checking/kani.git
+[submodule "dependencies/anchor"]
+	path = dependencies/anchor
+	url = git@github.com:coral-xyz/anchor.git

@@ -15,10 +15,16 @@ impl Pubkey {
                 .expect("Slice must be the same length as a Pubkey"),
         }
     }
+
     pub fn new_from_array(arr: [u8; PUBKEY_BYTES]) -> Pubkey {
         Pubkey { t: arr }
     }
+
     pub fn to_bytes(&self) -> [u8; PUBKEY_BYTES] {
+        self.t
+    }
+
+    pub fn key(&self) -> [u8; PUBKEY_BYTES] {
         self.t
     }
 }

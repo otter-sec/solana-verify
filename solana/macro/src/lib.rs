@@ -17,15 +17,15 @@ pub fn derive_init_space(item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn account(args: TokenStream, input: TokenStream) -> TokenStream {
-    core::account::account(args.into(), input.into())
+pub fn account(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::account::account(args.into(), item.into())
         .unwrap()
         .into()
 }
 
 #[proc_macro_attribute]
-pub fn error_code(args: TokenStream, input: TokenStream) -> TokenStream {
-    core::error::error_code(args.into(), input.into())
+pub fn error_code(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::error::error_code(args.into(), item.into())
         .unwrap()
         .into()
 }
@@ -39,8 +39,8 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 #[cfg(feature = "anchor")]
 #[proc_macro_attribute]
-pub fn program(args: TokenStream, input: TokenStream) -> TokenStream {
-    core::program::program(args.into(), input.into())
+pub fn program(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::program::program(args.into(), item.into())
         .unwrap()
         .into()
 }
@@ -57,8 +57,8 @@ pub fn verify_unpackable(types: TokenStream) -> TokenStream {
 
 #[cfg(feature = "verify")]
 #[proc_macro_attribute]
-pub fn verify(args: TokenStream, input: TokenStream) -> TokenStream {
-    core::verify::verify(args.into(), input.into())
+pub fn verify(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::verify::verify(args.into(), item.into())
         .expect("verify used on non-function?")
         .into()
 }

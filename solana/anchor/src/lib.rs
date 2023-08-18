@@ -38,7 +38,7 @@ pub mod prelude {
 
     pub use super::{
         err, AccountDeserialize, AccountSerialize, Accounts, AccountsClose, AccountsExit, Id,
-        Owner, ToAccountInfo, ToAccountInfos, ToAccountMetas,
+        Owner, Space, ToAccountInfo, ToAccountInfos, ToAccountMetas,
     };
     pub use crate::system_program::System;
     pub use crate::sysvar::Sysvar;
@@ -171,4 +171,8 @@ pub trait ToAccountMetas {
 
 pub trait Id {
     fn id() -> Pubkey;
+}
+
+pub trait Space {
+    const INIT_SPACE: usize;
 }

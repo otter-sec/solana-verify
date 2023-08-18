@@ -181,4 +181,13 @@ pub enum ErrorCode {
     /// 5000 - The API being used is deprecated and should no longer be used
     // #[msg("The API being used is deprecated and should no longer be used")]
     Deprecated = 5000,
+
+    // Generic rust error
+    StdIo = 9999,
+}
+
+impl From<std::io::Error> for ErrorCode {
+    fn from(_error: std::io::Error) -> Self {
+        ErrorCode::StdIo
+    }
 }

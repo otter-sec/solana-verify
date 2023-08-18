@@ -11,6 +11,11 @@ pub fn derive_accounts(item: TokenStream) -> TokenStream {
     core::account::derive_accounts(item.into()).unwrap().into()
 }
 
+#[proc_macro_derive(InitSpace, attributes(max_len))]
+pub fn derive_init_space(item: TokenStream) -> TokenStream {
+    core::space::derive_init_space(item.into()).unwrap().into()
+}
+
 #[proc_macro_attribute]
 pub fn account(args: TokenStream, input: TokenStream) -> TokenStream {
     core::account::account(args.into(), input.into())

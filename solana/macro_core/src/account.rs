@@ -190,9 +190,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let item = item.to_token_stream();
     let val = syn::parse2::<AccountsStruct>(item)?;
-    #[allow(clippy::redundant_clone)]
     let ident = val.ident.clone();
-    #[allow(clippy::redundant_clone)]
     let generics = val.generics.clone();
 
     let fields = val

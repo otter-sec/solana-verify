@@ -16,7 +16,7 @@ pub struct StupidRefMut<'a, T> {
 }
 
 // This is intentionally cursed to accomodate Rc<RefCell<&'a mut u64>> in AccountInfo
-#[allow(cast_ref_to_mut)]
+#[allow(invalid_reference_casting)]
 impl<T> StupidRefMut<'_, T> {
     fn new(x: &T) -> Self {
         Self {

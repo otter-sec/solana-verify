@@ -24,8 +24,8 @@ impl Pubkey {
         self.t
     }
 
-    pub fn key(&self) -> [u8; PUBKEY_BYTES] {
-        self.t
+    pub fn key(&self) -> Self {
+        *self
     }
 }
 

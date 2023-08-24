@@ -38,8 +38,8 @@ pub mod prelude {
     pub use crate::signer::{self, Signer};
 
     pub use super::{
-        err, AccountDeserialize, AccountSerialize, Accounts, AccountsClose, AccountsExit, Id,
-        Owner, Space, ToAccountInfo, ToAccountInfos, ToAccountMetas,
+        err, require, AccountDeserialize, AccountSerialize, Accounts, AccountsClose, AccountsExit,
+        Id, Owner, Space, ToAccountInfo, ToAccountInfos, ToAccountMetas,
     };
     pub use crate::system_program::System;
     pub use crate::sysvar::Sysvar;
@@ -85,6 +85,20 @@ macro_rules! err {
 //     };
 //     ($($arg:tt)*) => ($crate::log::sol_log(&format!($($arg)*)));
 // }
+
+#[macro_export]
+macro_rules! require {
+    ($invariant:expr, $error:tt $(,)?) => {
+        if !($invariant) {
+            return Err(Error {});
+        }
+    };
+    ($invariant:expr, $error:expr $(,)?) => {
+        if !($invariant) {
+            return Err(Error {});
+        }
+    };
+}
 
 /// Transformation to an `AccountInfo` struct.
 pub trait ToAccountInfo<'info> {

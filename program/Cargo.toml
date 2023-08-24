@@ -1,6 +1,6 @@
 [package]
 name = "otter-solana-program"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +10,7 @@ hex = { workspace = true }
 kani = { workspace = true, optional = true }
 num-traits = { workspace = true }
 otter-solana-macro = { path = "../macro" }
+thiserror = { workspace = true }
 
 [features]
 kani = ["dep:kani"]

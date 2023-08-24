@@ -266,7 +266,7 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "onchor"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "borsh",
  "hex",
@@ -278,7 +278,7 @@ dependencies = [
 
 [[package]]
 name = "otter-solana-macro"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "kani",
  "otter-solana-macro-core",
@@ -286,7 +286,7 @@ dependencies = [
 
 [[package]]
 name = "otter-solana-macro-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anchor-syn",
  "anyhow",
@@ -298,13 +298,14 @@ dependencies = [
 
 [[package]]
 name = "otter-solana-program"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "borsh",
  "hex",
  "kani",
  "num-traits",
  "otter-solana-macro",
+ "thiserror",
 ]
 
 [[package]]

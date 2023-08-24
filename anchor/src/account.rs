@@ -37,15 +37,15 @@ impl<'a, T: AnchorDeserialize + Owner> Account<'a, T> {
         /* info.owner == &system_program::ID && */
         info.lamports() == 0 {
             // return Err(ErrorCode::AccountNotInitialized.into());
-            return Err(Error);
+            return Err(Error::AccountDidNotDeserialize);
         }
         if info.owner != &T::owner() {
-            return Err(Error);
+            return Err(Error::AccountDidNotDeserialize);
         }
         let mut data: &[u8] = info.try_borrow_data()?;
         Ok(Account::new(
             info.clone(),
-            T::deserialize(&mut data).map_err(|_| Error)?,
+            T::deserialize(&mut data).map_err(|_| Error::AccountDidNotDeserialize)?,
         ))
     }
 

@@ -46,7 +46,7 @@ pub mod prelude {
 
     pub use otter_solana_program as solana_program;
     pub use solana_program::account_info::{next_account_info, AccountInfo};
-    pub use solana_program::error::{self, Error, ErrorCode};
+    pub use solana_program::error::{self, Error};
     pub use solana_program::instruction::AccountMeta;
     pub use solana_program::pubkey::Pubkey;
     pub use solana_program::rent::Rent;
@@ -117,7 +117,8 @@ pub trait ToAccountInfo<'info> {
 pub trait AccountSerialize: crate::prelude::AnchorSerialize {
     /// Serializes the account data into `writer`.
     fn try_serialize<W: Write>(&self, writer: &mut W) -> otter_solana_program::Result<()> {
-        self.serialize(writer).map_err(|_| crate::prelude::Error)
+        self.serialize(writer)
+            .map_err(|_| crate::prelude::Error::AccountDidNotSerialize)
     }
 }
 
@@ -137,7 +138,7 @@ pub trait AccountDeserialize: crate::prelude::AnchorDeserialize {
     /// This should only be used on account initialization, when the bytes of
     /// the account are zeroed.
     fn try_deserialize_unchecked(buf: &mut &[u8]) -> otter_solana_program::Result<Self> {
-        Self::deserialize(buf).map_err(|_| crate::prelude::Error)
+        Self::deserialize(buf).map_err(|_| crate::prelude::Error::AccountDidNotDeserialize)
     }
 }
 

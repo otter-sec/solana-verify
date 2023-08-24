@@ -55,6 +55,11 @@ pub fn verify_unpackable(types: TokenStream) -> TokenStream {
     core::unpackable::unpackable(types.into()).unwrap().into()
 }
 
+#[proc_macro_attribute]
+pub fn access_control(_args: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
 #[cfg(feature = "verify")]
 #[proc_macro_attribute]
 pub fn verify(args: TokenStream, item: TokenStream) -> TokenStream {

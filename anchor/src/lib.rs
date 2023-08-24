@@ -74,7 +74,7 @@ pub mod prelude {
 #[macro_export]
 macro_rules! err {
     ($v:expr) => {
-        Err(Error {})
+        Err(Error::StdIo)
     };
 }
 
@@ -90,12 +90,12 @@ macro_rules! err {
 macro_rules! require {
     ($invariant:expr, $error:tt $(,)?) => {
         if !($invariant) {
-            return Err(Error {});
+            return Err(Error::StdIo);
         }
     };
     ($invariant:expr, $error:expr $(,)?) => {
         if !($invariant) {
-            return Err(Error {});
+            return Err(Error::StdIo);
         }
     };
 }

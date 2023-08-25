@@ -53,6 +53,7 @@ impl<'a> AccountInfo<'a> {
         self.data.len()
     }
 
+    #[allow(invalid_reference_casting)]
     pub fn assign(&self, new_owner: &Pubkey) {
         unsafe {
             std::ptr::write_volatile(

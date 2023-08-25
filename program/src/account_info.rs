@@ -1,5 +1,7 @@
+use std::cell::{BorrowError, BorrowMutError};
+
 use super::pubkey::Pubkey;
-use crate::stupid_refcell::{StupidRefMut, StupidRefcell};
+use crate::stupid_refcell::{StupidRefCell, StupidRefMut};
 use crate::{pubkey::KEYS, vec::sparse::Vec, Key, Result};
 
 #[cfg(not(feature = "verify"))]
@@ -13,7 +15,7 @@ pub struct AccountInfo<'a> {
     pub key: &'a Pubkey,
     pub is_signer: bool,
     pub is_writable: bool,
-    pub lamports: StupidRefcell<u64>,
+    pub lamports: StupidRefCell<u64>,
     pub data: Vec<u8>,
     pub owner: &'a Pubkey,
     pub executable: bool,
@@ -33,12 +35,14 @@ impl<'a> AccountInfo<'a> {
         *self.lamports.borrow()
     }
 
-    pub fn try_borrow_lamports(&self) -> &u64 {
-        self.lamports.borrow()
+    pub fn try_borrow_lamports(&self) -> std::result::Result<u64, BorrowError> {
+        self.lamports.try_borrow().copied()
     }
 
-    pub fn try_borrow_mut_lamports(&mut self) -> StupidRefMut<u64> {
-        self.lamports.borrow_mut()
+    pub fn try_borrow_mut_lamports(
+        &mut self,
+    ) -> std::result::Result<StupidRefMut<u64>, BorrowMutError> {
+        self.lamports.try_borrow_mut()
     }
 
     pub fn realloc(&self, _new_len: usize, _zero_init: bool) -> Result<()> {

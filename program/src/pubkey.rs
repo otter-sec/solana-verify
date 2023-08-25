@@ -1,8 +1,25 @@
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 use borsh::{BorshDeserialize, BorshSerialize};
+
+use crate::error::Error;
 pub const PUBKEY_BYTES: usize = 1;
 
 #[derive(
-    PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Default, Debug, BorshSerialize, BorshDeserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Copy,
+    PartialOrd,
+    Ord,
+    Default,
+    Debug,
+    BorshSerialize,
+    BorshDeserialize,
+    Hash,
 )]
 pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],
@@ -26,6 +43,18 @@ impl Pubkey {
 
     pub fn key(&self) -> Self {
         *self
+    }
+
+    // keep hashing pubkey for the number of seeds there are and then create a pubkey by truncating
+    pub fn create_program_address(seeds: &[&[u8]], program_id: &Self) -> Result<Self, Error> {
+        let mut res = *program_id;
+        for _ in seeds {
+            let mut hasher = DefaultHasher::new();
+            res.hash(&mut hasher);
+            let bytes = hasher.finish().to_le_bytes();
+            res = Self::new(&bytes[..PUBKEY_BYTES]);
+        }
+        Ok(res)
     }
 }
 

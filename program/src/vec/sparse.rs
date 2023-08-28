@@ -167,6 +167,14 @@ impl<T> SparseSlice<T> {
     }
 }
 
+impl Index<u8> for SparseSlice<u8> {
+    type Output = u8;
+
+    fn index(&self, _: u8) -> &u8 {
+        &0u8
+    }
+}
+
 impl Index<usize> for SparseSlice<usize> {
     type Output = usize;
 
@@ -175,10 +183,10 @@ impl Index<usize> for SparseSlice<usize> {
     }
 }
 
-impl Index<usize> for Box<SparseSlice<usize>> {
-    type Output = usize;
+// impl Index<usize> for Box<SparseSlice<usize>> {
+//     type Output = usize;
 
-    fn index(&self, _: usize) -> &usize {
-        &0usize
-    }
-}
+//     fn index(&self, _: usize) -> &usize {
+//         &0usize
+//     }
+// }

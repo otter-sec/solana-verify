@@ -38,8 +38,8 @@ pub mod prelude {
     pub use crate::signer::{self, Signer};
 
     pub use super::{
-        err, require, require_keys_eq, AccountDeserialize, AccountSerialize, Accounts,
-        AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo, ToAccountInfos,
+        err, require, require_keys_eq, require_keys_neq, AccountDeserialize, AccountSerialize,
+        Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo, ToAccountInfos,
         ToAccountMetas,
     };
     pub use crate::system_program::System;
@@ -111,6 +111,20 @@ macro_rules! require_keys_eq {
     };
     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
         if $key_1 != $key_2 {
+            return Err(Error::Generic);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_keys_neq {
+    ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
+        if $key_1 == $key_2 {
+            return Err(Error::Generic);
+        }
+    };
+    ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
+        if $key_1 == $key_2 {
             return Err(Error::Generic);
         }
     };

@@ -151,6 +151,16 @@ impl<T: Default> FromIterator<T> for Vec<T> {
     }
 }
 
+impl<T: Default> FromIterator<std::vec::Vec<T>> for Vec<Vec<T>> {
+    fn from_iter<I: IntoIterator<Item = std::vec::Vec<T>>>(iter: I) -> Self {
+        let mut v = Vec::new();
+        for x in iter {
+            v.push(x.into());
+        }
+        v
+    }
+}
+
 impl<T: Default, const N: usize> From<[T; N]> for Vec<T> {
     fn from(arr: [T; N]) -> Vec<T> {
         let mut vec = Vec::new();

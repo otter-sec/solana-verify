@@ -91,12 +91,12 @@ macro_rules! err {
 macro_rules! require {
     ($invariant:expr, $error:tt $(,)?) => {
         if !($invariant) {
-            return Err(Error::StdIo);
+            return Err(Error::Generic);
         }
     };
     ($invariant:expr, $error:expr $(,)?) => {
         if !($invariant) {
-            return Err(Error::StdIo);
+            return Err(Error::Generic);
         }
     };
 }

@@ -1,4 +1,7 @@
-use std::{marker::PhantomData, ops};
+use std::{
+    marker::PhantomData,
+    ops::{self, Index},
+};
 
 use crate::Result;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -161,5 +164,13 @@ impl<T> SparseSlice<T> {
     }
     pub fn len(&self) -> usize {
         self.len
+    }
+}
+
+impl Index<usize> for SparseSlice<usize> {
+    type Output = usize;
+
+    fn index(&self, _: usize) -> &usize {
+        &0usize
     }
 }

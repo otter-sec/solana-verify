@@ -3,7 +3,7 @@ pub enum Error {
     // Instructions
     // 100 - 8 byte instruction identifier not provided
     #[error("8 byte instruction identifier not provided")]
-    InstructionMissing = 100,
+    InstructionMissing,
     // 101 - Fallback functions are not supported
     #[error("Fallback functions are not supported")]
     InstructionFallbackNotFound,
@@ -17,7 +17,7 @@ pub enum Error {
     // IDL instructions
     // 1000 - The program was compiled without idl instructions
     #[error("The program was compiled without idl instructions")]
-    IdlInstructionStub = 1000,
+    IdlInstructionStub,
     // 1001 - Invalid program given to the IDL instruction
     #[error("Invalid program given to the IDL instruction")]
     IdlInstructionInvalidProgram,
@@ -25,7 +25,7 @@ pub enum Error {
     // Constraints
     // 2000 - A mut constraint was violated
     #[error("A mut constraint was violated")]
-    ConstraintMut = 2000,
+    ConstraintMut,
     // 2001 - A has one constraint was violated
     #[error("A has one constraint was violated")]
     ConstraintHasOne,
@@ -89,7 +89,7 @@ pub enum Error {
     // Require
     // 2500 - A require expression was violated
     #[error("A require expression was violated")]
-    RequireViolated = 2500,
+    RequireViolated,
     // 2501 - A require_eq expression was violated
     #[error("A require_eq expression was violated")]
     RequireEqViolated,
@@ -112,7 +112,7 @@ pub enum Error {
     // Accounts.
     // 3000 - The account discriminator was already set on this account
     #[error("The account discriminator was already set on this account")]
-    AccountDiscriminatorAlreadySet = 3000,
+    AccountDiscriminatorAlreadySet,
     // 3001 - No 8 byte discriminator was found on the account
     #[error("No 8 byte discriminator was found on the account")]
     AccountDiscriminatorNotFound,
@@ -168,25 +168,24 @@ pub enum Error {
     // State.
     // 4000 - The given state account does not have the correct address
     #[error("The given state account does not have the correct address")]
-    StateInvalidAddress = 4000,
+    StateInvalidAddress,
 
     // Miscellaneous
     // 4100 - The declared program id does not match actual program id
     #[error("The declared program id does not match the actual program id")]
-    DeclaredProgramIdMismatch = 4100,
+    DeclaredProgramIdMismatch,
 
     // Deprecated
     // 5000 - The API being used is deprecated and should no longer be used
     #[error("The API being used is deprecated and should no longer be used")]
-    Deprecated = 5000,
+    Deprecated,
 
-    // Generic rust error
-    #[error("Generic rust error")]
-    StdIo = 9999,
-}
+    #[error(transparent)]
+    StdIo(#[from] std::io::Error),
 
-impl From<std::io::Error> for Error {
-    fn from(_error: std::io::Error) -> Self {
-        Error::StdIo
-    }
+    #[error(transparent)]
+    SystemTime(#[from] std::time::SystemTimeError),
+
+    #[error("generic error")]
+    Generic,
 }

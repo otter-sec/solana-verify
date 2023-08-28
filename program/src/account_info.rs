@@ -68,7 +68,7 @@ impl<'a> AccountInfo<'a> {
 pub fn next_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>>>(
     iter: &mut I,
 ) -> Result<I::Item> {
-    iter.next().ok_or(Error::StdIo)
+    iter.next().ok_or(Error::InstructionMissing)
 }
 
 #[cfg(feature = "verify")]

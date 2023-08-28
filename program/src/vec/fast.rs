@@ -96,7 +96,7 @@ impl<T> Vec<T> {
             }
         }
 
-        Err(Error::StdIo)
+        Err(Error::Generic)
     }
 
     pub fn as_slice(&self) -> &[T] {
@@ -168,13 +168,13 @@ impl FromHex for Vec<u8> {
                 b'A'..=b'F' => Ok(c - b'A' + 10),
                 b'a'..=b'f' => Ok(c - b'a' + 10),
                 b'0'..=b'9' => Ok(c - b'0'),
-                _ => Err(Error::StdIo),
+                _ => Err(Error::Generic),
             }
         }
 
         let hex = hex.as_ref();
         if hex.len() % 2 != 0 {
-            return Err(Error::StdIo);
+            return Err(Error::Generic);
         }
 
         hex.chunks(2)

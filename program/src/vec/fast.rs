@@ -43,6 +43,18 @@ impl<T> Vec<T> {
         self.size += 1;
     }
 
+    pub fn insert(&mut self, pos: usize, t: T) {
+        if pos >= self.size {
+            panic!("oob");
+        }
+
+        let mut v = std::mem::replace(&mut self.data[pos], t);
+        for i in pos + 1..self.size + 1 {
+            v = std::mem::replace(&mut self.data[i], v);
+        }
+        self.size += 1;
+    }
+
     pub fn len(&self) -> usize {
         self.size
     }

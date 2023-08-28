@@ -75,7 +75,7 @@ pub mod prelude {
 #[macro_export]
 macro_rules! err {
     ($v:expr) => {
-        Err(Error::StdIo)
+        Err(Error::Generic)
     };
 }
 

@@ -121,6 +121,12 @@ pub trait ToAccountInfo<'info> {
     fn to_account_info(&self) -> AccountInfo<'info>;
 }
 
+impl<'info> ToAccountInfo<'info> for AccountInfo<'info> {
+    fn to_account_info(&self) -> AccountInfo<'info> {
+        self.clone()
+    }
+}
+
 // impl<'info, T> ToAccountInfo<'info> for T
 // where
 //     T: AsRef<AccountInfo<'info>>,

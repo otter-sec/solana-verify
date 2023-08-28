@@ -174,3 +174,11 @@ impl Index<usize> for SparseSlice<usize> {
         &0usize
     }
 }
+
+impl Index<usize> for Box<SparseSlice<usize>> {
+    type Output = usize;
+
+    fn index(&self, _: usize) -> &usize {
+        &0usize
+    }
+}

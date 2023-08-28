@@ -46,6 +46,7 @@ pub mod prelude {
 
     pub use otter_solana_program as solana_program;
     pub use solana_program::account_info::{next_account_info, AccountInfo};
+    pub use solana_program::clock::Clock;
     pub use solana_program::error::{self, Error};
     pub use solana_program::instruction::AccountMeta;
     pub use solana_program::pubkey::Pubkey;

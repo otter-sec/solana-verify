@@ -104,13 +104,13 @@ macro_rules! require {
 
 #[macro_export]
 macro_rules! require_keys_eq {
-    ($account_info:expr, $key:expr, $error:tt $(,)?) => {
-        if $account_info.key != $key {
+    ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
+        if $key_1 != $key_2 {
             return Err(Error::Generic);
         }
     };
-    ($account_info:expr, $key:expr, $error:expr $(,)?) => {
-        if $account_info.key != $key {
+    ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
+        if $key_1 != $key_2 {
             return Err(Error::Generic);
         }
     };

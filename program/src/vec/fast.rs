@@ -3,7 +3,7 @@ use std::ops;
 
 use hex::FromHex;
 
-use crate::{error::Error, Result};
+use crate::error::Error;
 use borsh::{BorshDeserialize, BorshSerialize};
 
 const VEC_SIZE: usize = 10;
@@ -98,7 +98,7 @@ impl<T> Vec<T> {
         self.size -= 1;
     }
 
-    pub fn binary_search(&self, t: &T) -> Result<usize>
+    pub fn binary_search(&self, t: &T) -> std::result::Result<usize, usize>
     where
         T: PartialEq,
     {
@@ -108,7 +108,7 @@ impl<T> Vec<T> {
             }
         }
 
-        Err(Error::Generic)
+        Err(self.size)
     }
 
     pub fn as_slice(&self) -> &[T] {

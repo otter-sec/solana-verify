@@ -91,7 +91,7 @@ fn create_arbitrary_enum(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
     }
     let variants_len = variants.len();
     quote! {
-        let __enum_discriminator = kani::any::<u8>();
+        let __enum_discriminator = kani::any::<usize>();
         kani::assume(__enum_discriminator < #variants_len);
         match __enum_discriminator {
             #init_fields

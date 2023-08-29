@@ -51,7 +51,7 @@ pub fn arbitrary(input: TokenStream) -> Result<TokenStream> {
 }
 
 fn get_fields_tokenstream(fields: Fields) -> TokenStream2 {
-    let result = match fields {
+    match fields {
         Fields::Named(fields) => {
             let named_fields = fields.named;
             let mut init_fields = quote! {};
@@ -63,18 +63,28 @@ fn get_fields_tokenstream(fields: Fields) -> TokenStream2 {
                 }
                 init_fields.extend(quote! { #field_ident: kani::any(), });
             }
-            init_fields
+            quote! {
+                Self{#init_fields}
+            }
         }
-        _ => quote! {},
-    };
-    quote! {
-        Self{#result}
+        Fields::Unit => quote! { Self },
+        Fields::Unnamed(fields) => {
+            let unnamed_fields = fields.unnamed;
+            let mut init_fields = quote! {};
+            for _ in unnamed_fields {
+                init_fields.extend(quote! { kani::any(), });
+            }
+            quote! {
+                Self(#init_fields)
+            }
+        }
     }
 }
 
 fn get_variants_tokenstream(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
     let mut init_fields = quote! {};
     for (index, variant) in (0_u8..).zip(variants.iter()) {
+        let variant = get_fields_tokenstream(variant.fields.clone());
         init_fields.extend({
             quote! {
                 #index => #variant,

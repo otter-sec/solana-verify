@@ -1,6 +1,6 @@
 use std::{
     marker::PhantomData,
-    ops::{self, Index, RangeFull},
+    ops::{self, Index, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
 };
 
 use crate::Result;
@@ -167,10 +167,50 @@ impl<T> SparseSlice<T> {
     }
 }
 
-impl Index<RangeFull> for SparseSlice<u8> {
-    type Output = [u8];
+impl<T> Index<Range<usize>> for SparseSlice<T> {
+    type Output = [T];
 
-    fn index(&self, _: RangeFull) -> &[u8] {
+    fn index(&self, _: Range<usize>) -> &[T] {
+        &[]
+    }
+}
+
+impl<T> Index<RangeFrom<usize>> for SparseSlice<T> {
+    type Output = [T];
+
+    fn index(&self, _: RangeFrom<usize>) -> &[T] {
+        &[]
+    }
+}
+
+impl<T> Index<RangeFull> for SparseSlice<T> {
+    type Output = [T];
+
+    fn index(&self, _: RangeFull) -> &[T] {
+        &[]
+    }
+}
+
+impl<T> Index<RangeInclusive<usize>> for SparseSlice<T> {
+    type Output = [T];
+
+    fn index(&self, _: RangeInclusive<usize>) -> &[T] {
+        &[]
+    }
+}
+
+impl<T> Index<RangeTo<usize>> for SparseSlice<T> {
+    type Output = [T];
+
+    fn index(&self, _: RangeTo<usize>) -> &[T] {
+        &[]
+    }
+}
+
+impl<T> Index<RangeToInclusive<usize>> for SparseSlice<T> {
+    type Output = [T];
+
+    fn index(&self, _: RangeToInclusive<usize>) -> &[T] {
         &[]
     }
 }

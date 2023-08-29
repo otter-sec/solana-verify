@@ -50,8 +50,8 @@ impl<'a, T: AnchorDeserialize + Owner> Account<'a, T> {
     }
 
     #[inline(never)]
-    pub fn try_from_unchecked(info: &AccountInfo<'a>) -> Result<Account<'a, T>> {
-        Self::try_from(info)
+    pub fn try_from_unchecked(info: &AccountInfo<'a>) -> Account<'a, T> {
+        Self::try_from(info).unwrap()
     }
 }
 
@@ -109,6 +109,17 @@ impl<'a, T> DerefMut for Account<'a, T> {
 impl<'info, T> Key for Account<'info, T> {
     fn key(&self) -> Pubkey {
         *self.info.key
+    }
+}
+
+impl<'info, T> TryFrom<AccountInfo<'info>> for Account<'info, T>
+where
+    T: AnchorDeserialize + Owner,
+{
+    type Error = Error;
+
+    fn try_from(info: AccountInfo<'info>) -> Result<Self> {
+        Self::try_from(&info)
     }
 }
 

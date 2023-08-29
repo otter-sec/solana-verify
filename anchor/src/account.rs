@@ -6,14 +6,14 @@ use otter_solana_program::{
     account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Account<'info, T> {
     pub account: T,
     pub info: AccountInfo<'info>,
 }
 
 impl<'a, T> Account<'a, T> {
-    fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
+    pub fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
         Self { info, account }
     }
 
@@ -86,12 +86,9 @@ impl<'a, T> Deref for Account<'a, T> {
     }
 }
 
-impl<'a, T> AsRef<T> for Account<'a, T>
-where
-    <Account<'a, T> as Deref>::Target: AsRef<T>,
-{
+impl<'a, T> AsRef<T> for Account<'a, T> {
     fn as_ref(&self) -> &T {
-        self.deref()
+        &self.account
     }
 }
 

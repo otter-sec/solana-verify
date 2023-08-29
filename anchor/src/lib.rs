@@ -4,6 +4,7 @@ extern crate core;
 
 pub mod account;
 pub mod context;
+pub mod interface;
 pub mod program;
 pub mod signer;
 pub mod system_program;

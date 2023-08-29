@@ -23,26 +23,24 @@ pub fn arbitrary(input: TokenStream) -> Result<TokenStream> {
         generics,
         ..
     } = input;
-    let result = match data {
+    let inner = match data {
         Data::Struct(data) => {
             let fields = data.fields;
-            get_fields_tokenstream(fields)
+            create_arbitrary_struct(ident.clone(), fields)
         }
         Data::Enum(data) => {
             let variants = data.variants;
-            let init_fields = get_variants_tokenstream(variants);
-
+            let arb_enum = create_arbitrary_enum(variants);
             quote! {
                 use #ident::*;
-
-                #init_fields
+                #arb_enum
             }
         }
-        _ => quote! {},
+        _ => todo!("Only structs and enums are supported"),
     };
     let implementation = quote! {
         fn any() -> Self {
-            #result
+            #inner
         }
     };
     let lifetimes = parse_generics(generics);
@@ -50,7 +48,7 @@ pub fn arbitrary(input: TokenStream) -> Result<TokenStream> {
     Ok(output)
 }
 
-fn get_fields_tokenstream(fields: Fields) -> TokenStream2 {
+fn create_arbitrary_struct(ident: Ident, fields: Fields) -> TokenStream2 {
     match fields {
         Fields::Named(fields) => {
             let named_fields = fields.named;
@@ -64,10 +62,10 @@ fn get_fields_tokenstream(fields: Fields) -> TokenStream2 {
                 init_fields.extend(quote! { #field_ident: kani::any(), });
             }
             quote! {
-                Self{#init_fields}
+                #ident {#init_fields}
             }
         }
-        Fields::Unit => quote! { Self },
+        Fields::Unit => quote! { #ident },
         Fields::Unnamed(fields) => {
             let unnamed_fields = fields.unnamed;
             let mut init_fields = quote! {};
@@ -75,16 +73,16 @@ fn get_fields_tokenstream(fields: Fields) -> TokenStream2 {
                 init_fields.extend(quote! { kani::any(), });
             }
             quote! {
-                Self(#init_fields)
+                #ident (#init_fields)
             }
         }
     }
 }
 
-fn get_variants_tokenstream(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
+fn create_arbitrary_enum(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
     let mut init_fields = quote! {};
     for (index, variant) in (0_u8..).zip(variants.iter()) {
-        let variant = get_fields_tokenstream(variant.fields.clone());
+        let variant = create_arbitrary_struct(variant.ident.clone(), variant.fields.clone());
         init_fields.extend({
             quote! {
                 #index => #variant,

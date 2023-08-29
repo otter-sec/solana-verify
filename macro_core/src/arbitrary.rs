@@ -89,16 +89,10 @@ fn create_arbitrary_enum(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
             }
         });
     }
-    // let variant = variants.last();
-    // init_fields.extend({
-    //     let variant = create_arbitrary_struct(variant.ident.clone(), variant.fields.clone());
-    //     quote! {
-    //         _ => #variant
-    //     }
-    // });
+    let variants_len = variants.len();
     quote! {
         let __enum_discriminator = kani::any::<u8>();
-        kani::assume(__enum_discriminator < variants.len());
+        kani::assume(__enum_discriminator < #variants_len);
         match __enum_discriminator {
             #init_fields
         }

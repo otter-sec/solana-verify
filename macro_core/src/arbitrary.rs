@@ -81,7 +81,7 @@ fn create_arbitrary_struct(ident: Ident, fields: Fields) -> TokenStream2 {
 
 fn create_arbitrary_enum(variants: Punctuated<Variant, Comma>) -> TokenStream2 {
     let mut init_fields = quote! {};
-    for (index, variant) in (0_u8..).zip(variants.iter()) {
+    for (index, variant) in (0_usize..).zip(variants.iter()) {
         let variant = create_arbitrary_struct(variant.ident.clone(), variant.fields.clone());
         init_fields.extend({
             quote! {

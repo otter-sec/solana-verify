@@ -40,9 +40,9 @@ pub mod prelude {
     pub use crate::signer::{self, Signer};
 
     pub use super::{
-        err, require, require_keys_eq, require_keys_neq, AccountDeserialize, AccountSerialize,
-        Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo, ToAccountInfos,
-        ToAccountMetas,
+        err, require, require_eq, require_keys_eq, require_keys_neq, AccountDeserialize,
+        AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo,
+        ToAccountInfos, ToAccountMetas,
     };
     pub use crate::system_program::System;
     pub use crate::sysvar::Sysvar;
@@ -99,6 +99,20 @@ macro_rules! require {
     };
     ($invariant:expr, $error:expr $(,)?) => {
         if !($invariant) {
+            return Err(Error::Generic);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_eq {
+    ($val_1:expr, $val_2:expr, $error:tt $(,)?) => {
+        if $val_1 != $val_2 {
+            return Err(Error::Generic);
+        }
+    };
+    ($val_1:expr, $val_2:expr, $error:expr $(,)?) => {
+        if $val_1 != $val_2 {
             return Err(Error::Generic);
         }
     };

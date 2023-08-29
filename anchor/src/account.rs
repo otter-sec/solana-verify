@@ -112,14 +112,14 @@ impl<'info, T> Key for Account<'info, T> {
     }
 }
 
-impl<'info, T> TryFrom<AccountInfo<'info>> for Account<'info, T>
+impl<'info, T> TryFrom<&AccountInfo<'info>> for Account<'info, T>
 where
     T: AnchorDeserialize + Owner,
 {
     type Error = Error;
 
-    fn try_from(info: AccountInfo<'info>) -> Result<Self> {
-        Self::try_from(&info)
+    fn try_from(info: &AccountInfo<'info>) -> Result<Self> {
+        Self::try_from(info)
     }
 }
 

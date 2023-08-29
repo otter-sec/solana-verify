@@ -35,6 +35,7 @@ pub mod prelude {
 
     pub use crate::account::{self, Account};
     pub use crate::context::{self, Context};
+    pub use crate::interface::{Interface, InterfaceAccount};
     pub use crate::program::Program;
     pub use crate::signer::{self, Signer};
 

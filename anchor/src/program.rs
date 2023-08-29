@@ -35,8 +35,8 @@ where
 {
     fn any() -> Self {
         Self {
-            _account: kani::any(),
             info: kani::any(),
+            _phantom: PhantomData,
         }
     }
 }

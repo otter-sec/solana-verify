@@ -19,3 +19,10 @@ pub struct Transfer<'info> {
     pub from: AccountInfo<'info>,
     pub to: AccountInfo<'info>,
 }
+
+#[derive(Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
+pub struct CreateAccount<'info> {
+    pub from: AccountInfo<'info>,
+    pub to: AccountInfo<'info>,
+}

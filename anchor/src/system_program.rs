@@ -88,6 +88,8 @@ impl<'info> ToAccountInfos<'info> for CreateAccount<'info> {
 pub fn create_account<'info>(
     _ctx: CpiContext<'_, '_, '_, 'info, CreateAccount<'info>>,
     _lamports: u64,
+    _space: u64,
+    _program: &Pubkey,
 ) -> Result<()> {
     Ok(())
 }

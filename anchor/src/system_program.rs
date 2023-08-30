@@ -26,3 +26,15 @@ pub struct CreateAccount<'info> {
     pub from: AccountInfo<'info>,
     pub to: AccountInfo<'info>,
 }
+
+#[derive(Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
+pub struct Allocate<'info> {
+    pub account_to_allocate: AccountInfo<'info>,
+}
+
+#[derive(Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
+pub struct Assign<'info> {
+    pub account_to_assign: AccountInfo<'info>,
+}

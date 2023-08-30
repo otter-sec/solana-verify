@@ -43,7 +43,7 @@ pub mod prelude {
         AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo,
         ToAccountInfos, ToAccountMetas,
     };
-    pub use crate::system_program::System;
+    pub use crate::system_program::{self, System};
     pub use crate::sysvar::Sysvar;
 
     pub use otter_solana_program as solana_program;

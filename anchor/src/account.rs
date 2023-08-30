@@ -7,6 +7,7 @@ use otter_solana_program::{
 };
 
 #[derive(Debug, Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Account<'info, T> {
     pub account: T,
     pub info: AccountInfo<'info>,
@@ -117,18 +118,5 @@ where
 
     fn try_from(info: &AccountInfo<'info>) -> Result<Self> {
         Self::try_from(info)
-    }
-}
-
-#[cfg(any(kani, feature = "kani"))]
-impl<'info, T> kani::Arbitrary for Account<'info, T>
-where
-    T: kani::Arbitrary,
-{
-    fn any() -> Self {
-        Self {
-            info: kani::any(),
-            account: kani::any(),
-        }
     }
 }

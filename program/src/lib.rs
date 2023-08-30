@@ -43,7 +43,7 @@ pub mod verify {
     pub use super::vec::fast::Vec;
 
     pub use otter_solana_macro::{
-        account, error_code, invariant, verify, verify_unpackable, Accounts, Arbitrary,
+        account, error_code, invariant, verify, verify_unpackable, Accounts,
     };
 }
 

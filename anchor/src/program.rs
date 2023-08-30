@@ -4,6 +4,7 @@ use crate::{prelude::Result, ToAccountInfo};
 use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
 #[derive(Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Program<'info, T> {
     info: AccountInfo<'info>,
     _phantom: PhantomData<T>,
@@ -25,19 +26,6 @@ impl<'a, T> Program<'a, T> {
 
     pub fn programdata_address(&self) -> Result<Option<Pubkey>> {
         Ok(Some(*self.info.key))
-    }
-}
-
-#[cfg(any(kani, feature = "kani"))]
-impl<'info, T> kani::Arbitrary for Program<'info, T>
-where
-    T: kani::Arbitrary,
-{
-    fn any() -> Self {
-        Self {
-            info: kani::any(),
-            _phantom: PhantomData,
-        }
     }
 }
 

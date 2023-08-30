@@ -29,8 +29,7 @@ pub mod prelude {
     };
 
     pub use otter_solana_macro::{
-        access_control, account, declare_id, error_code, invariant, program, Accounts, Arbitrary,
-        InitSpace,
+        access_control, account, declare_id, error_code, invariant, program, Accounts, InitSpace,
     };
 
     pub use crate::account::{self, Account};
@@ -62,7 +61,7 @@ pub mod prelude {
     pub use thiserror;
 
     #[cfg(any(kani, feature = "kani"))]
-    pub use kani;
+    pub use kani::{self, Arbitrary};
 
     // TODO: maybe fix this?
     // pub use crate::{

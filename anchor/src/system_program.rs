@@ -1,14 +1,10 @@
-use crate::prelude::{AnchorDeserialize, AnchorSerialize};
+use crate::Id;
 
-use crate::{AccountDeserialize, AccountSerialize, Id};
-
+use otter_solana_program::account_info::AccountInfo;
 use otter_solana_program::pubkey::Pubkey;
 
-#[cfg(any(kani, feature = "kani"))]
-use otter_solana_macro::Arbitrary;
-
-#[derive(Clone, Default, AnchorSerialize, AnchorDeserialize)]
-#[cfg_attr(any(kani, feature = "kani"), derive(Arbitrary))]
+#[derive(Clone, Default)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct System;
 
 impl Id for System {
@@ -17,5 +13,9 @@ impl Id for System {
     }
 }
 
-impl AccountSerialize for System {}
-impl AccountDeserialize for System {}
+#[derive(Debug)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
+pub struct Transfer<'info> {
+    pub from: AccountInfo<'info>,
+    pub to: AccountInfo<'info>,
+}

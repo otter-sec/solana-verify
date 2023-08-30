@@ -1,5 +1,4 @@
 pub mod account;
-pub mod arbitrary;
 pub mod error;
 pub mod invariant;
 pub mod space;

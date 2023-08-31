@@ -6,7 +6,6 @@ exclude = ["dependencies"]
 [workspace.dependencies]
 anyhow = "1.0.69"
 borsh = "0.10.1"
-darling = "0.14.1"
 hex = "0.3.1"
 kani = { path = "./dependencies/kani/library/kani", features = [
     "concrete_playback",

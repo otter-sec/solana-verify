@@ -4,6 +4,7 @@ extern crate core;
 
 pub mod account;
 pub mod context;
+pub mod interface;
 pub mod program;
 pub mod signer;
 pub mod system_program;
@@ -28,21 +29,21 @@ pub mod prelude {
     };
 
     pub use otter_solana_macro::{
-        access_control, account, declare_id, error_code, invariant, program, Accounts, Arbitrary,
-        InitSpace,
+        access_control, account, declare_id, error_code, invariant, program, Accounts, InitSpace,
     };
 
     pub use crate::account::{self, Account};
-    pub use crate::context::{self, Context};
+    pub use crate::context::{self, Context, CpiContext};
+    pub use crate::interface::{Interface, InterfaceAccount};
     pub use crate::program::Program;
     pub use crate::signer::{self, Signer};
 
     pub use super::{
-        err, require, require_keys_eq, require_keys_neq, AccountDeserialize, AccountSerialize,
-        Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo, ToAccountInfos,
-        ToAccountMetas,
+        err, require, require_eq, require_keys_eq, require_keys_neq, AccountDeserialize,
+        AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo,
+        ToAccountInfos, ToAccountMetas,
     };
-    pub use crate::system_program::System;
+    pub use crate::system_program::{self, System};
     pub use crate::sysvar::Sysvar;
 
     pub use otter_solana_program as solana_program;
@@ -60,7 +61,7 @@ pub mod prelude {
     pub use thiserror;
 
     #[cfg(any(kani, feature = "kani"))]
-    pub use kani;
+    pub use kani::{self, Arbitrary};
 
     // TODO: maybe fix this?
     // pub use crate::{
@@ -97,6 +98,20 @@ macro_rules! require {
     };
     ($invariant:expr, $error:expr $(,)?) => {
         if !($invariant) {
+            return Err(Error::Generic);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_eq {
+    ($val_1:expr, $val_2:expr, $error:tt $(,)?) => {
+        if $val_1 != $val_2 {
+            return Err(Error::Generic);
+        }
+    };
+    ($val_1:expr, $val_2:expr, $error:expr $(,)?) => {
+        if $val_1 != $val_2 {
             return Err(Error::Generic);
         }
     };

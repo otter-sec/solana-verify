@@ -1,9 +1,13 @@
-use crate::ToAccountInfo;
-use otter_solana_program::account_info::AccountInfo;
+use std::marker::PhantomData;
 
+use crate::{prelude::Result, ToAccountInfo};
+use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey};
+
+#[derive(Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Program<'info, T> {
-    _account: T,
     info: AccountInfo<'info>,
+    _phantom: PhantomData<T>,
 }
 
 impl<'info, T> ToAccountInfo<'info> for Program<'info, T> {
@@ -12,16 +16,16 @@ impl<'info, T> ToAccountInfo<'info> for Program<'info, T> {
     }
 }
 
-#[cfg(any(kani, feature = "kani"))]
-impl<'info, T> kani::Arbitrary for Program<'info, T>
-where
-    T: kani::Arbitrary,
-{
-    fn any() -> Self {
+impl<'a, T> Program<'a, T> {
+    pub fn new(info: AccountInfo<'a>) -> Self {
         Self {
-            _account: kani::any(),
-            info: kani::any(),
+            info,
+            _phantom: PhantomData,
         }
+    }
+
+    pub fn programdata_address(&self) -> Result<Option<Pubkey>> {
+        Ok(Some(*self.info.key))
     }
 }
 
@@ -31,8 +35,8 @@ where
 {
     fn default() -> Self {
         Self {
-            _account: Default::default(),
             info: Default::default(),
+            _phantom: PhantomData,
         }
     }
 }

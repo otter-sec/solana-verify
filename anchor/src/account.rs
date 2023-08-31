@@ -6,14 +6,15 @@ use otter_solana_program::{
     account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Account<'info, T> {
     pub account: T,
     pub info: AccountInfo<'info>,
 }
 
 impl<'a, T> Account<'a, T> {
-    fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
+    pub fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
         Self { info, account }
     }
 
@@ -50,8 +51,8 @@ impl<'a, T: AnchorDeserialize + Owner> Account<'a, T> {
     }
 
     #[inline(never)]
-    pub fn try_from_unchecked(info: &AccountInfo<'a>) -> Result<Account<'a, T>> {
-        Self::try_from(info)
+    pub fn try_from_unchecked(info: &AccountInfo<'a>) -> Account<'a, T> {
+        Self::try_from(info).unwrap()
     }
 }
 
@@ -86,12 +87,9 @@ impl<'a, T> Deref for Account<'a, T> {
     }
 }
 
-impl<'a, T> AsRef<T> for Account<'a, T>
-where
-    <Account<'a, T> as Deref>::Target: AsRef<T>,
-{
+impl<'a, T> AsRef<T> for Account<'a, T> {
     fn as_ref(&self) -> &T {
-        self.deref()
+        &self.account
     }
 }
 
@@ -112,15 +110,13 @@ impl<'info, T> Key for Account<'info, T> {
     }
 }
 
-#[cfg(any(kani, feature = "kani"))]
-impl<'info, T> kani::Arbitrary for Account<'info, T>
+impl<'info, T> TryFrom<&AccountInfo<'info>> for Account<'info, T>
 where
-    T: kani::Arbitrary,
+    T: AnchorDeserialize + Owner,
 {
-    fn any() -> Self {
-        Self {
-            info: kani::any(),
-            account: kani::any(),
-        }
+    type Error = Error;
+
+    fn try_from(info: &AccountInfo<'info>) -> Result<Self> {
+        Self::try_from(info)
     }
 }

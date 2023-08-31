@@ -45,11 +45,6 @@ pub fn program(args: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(Arbitrary, attributes(osec))]
-pub fn derive_arbitrary(item: TokenStream) -> TokenStream {
-    core::arbitrary::arbitrary(item.into()).unwrap().into()
-}
-
 #[proc_macro]
 pub fn verify_unpackable(types: TokenStream) -> TokenStream {
     core::unpackable::unpackable(types.into()).unwrap().into()

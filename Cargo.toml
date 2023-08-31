@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["anchor", "macro", "macro_core", "program"]
+members = ["anchor", "anchor_spl", "macro", "macro_core", "program"]
 exclude = ["dependencies"]
 
 [workspace.dependencies]

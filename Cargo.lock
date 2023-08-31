@@ -30,13 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anchor_spl"
-version = "0.1.0"
-dependencies = [
- "onchor",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -234,6 +227,13 @@ dependencies = [
  "otter-solana-macro",
  "otter-solana-program",
  "thiserror",
+]
+
+[[package]]
+name = "onchor_spl"
+version = "0.1.0"
+dependencies = [
+ "onchor",
 ]
 
 [[package]]

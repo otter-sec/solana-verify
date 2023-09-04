@@ -4,11 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+kani = { workspace = true, optional = true }
 onchor = { path = "../anchor" }
 
 [features]
 default = []
-kani = ["onchor/kani"]
+kani = ["dep:kani", "onchor/kani"]
 
 [lib]
 path = "src/lib.rs"

@@ -1,6 +1,7 @@
 use std::cell::{BorrowError, BorrowMutError};
 
 use super::pubkey::Pubkey;
+use crate::instruction::AccountMeta;
 use crate::stupid_refcell::{StupidRefCell, StupidRefMut};
 use crate::{pubkey::KEYS, vec::sparse::Vec, Key, Result};
 
@@ -53,6 +54,14 @@ impl<'a> AccountInfo<'a> {
         self.data.len()
     }
 
+    pub fn to_account_meta(&self, is_signer: bool) -> AccountMeta {
+        if self.is_writable {
+            AccountMeta::new(*self.key, is_signer)
+        } else {
+            AccountMeta::new_readonly(*self.key, is_signer)
+        }
+    }
+
     #[allow(invalid_reference_casting)]
     pub fn assign(&self, new_owner: &Pubkey) {
         unsafe {
@@ -61,6 +70,12 @@ impl<'a> AccountInfo<'a> {
                 new_owner.to_bytes(),
             );
         }
+    }
+}
+
+impl<'a> AsRef<AccountInfo<'a>> for AccountInfo<'a> {
+    fn as_ref(&self) -> &AccountInfo<'a> {
+        self
     }
 }
 

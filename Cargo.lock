@@ -233,6 +233,7 @@ dependencies = [
 name = "onchor_spl"
 version = "0.1.0"
 dependencies = [
+ "kani",
  "onchor",
 ]
 

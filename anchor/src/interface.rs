@@ -9,10 +9,11 @@ use otter_solana_program::{
 
 use crate::{
     prelude::{Account, Program},
-    AccountDeserialize, AccountSerialize, ToAccountInfos, ToAccountMetas,
+    AccountDeserialize, AccountSerialize, ToAccountInfo, ToAccountInfos, ToAccountMetas,
 };
 
 #[derive(Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Interface<'info, T>(Program<'info, T>);
 
 impl<'a, T> Interface<'a, T> {
@@ -25,10 +26,25 @@ impl<'a, T> Interface<'a, T> {
     }
 }
 
+impl<'info, T> ToAccountInfo<'info> for Interface<'info, T> {
+    fn to_account_info(&self) -> AccountInfo<'info> {
+        self.0.to_account_info()
+    }
+}
+
 #[derive(Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct InterfaceAccount<'info, T: AccountSerialize + AccountDeserialize + Clone> {
     pub account: Account<'info, T>,
     pub owner: Pubkey,
+}
+
+impl<'info, T: AccountSerialize + AccountDeserialize + Clone> ToAccountInfo<'info>
+    for InterfaceAccount<'info, T>
+{
+    fn to_account_info(&self) -> AccountInfo<'info> {
+        self.account.to_account_info()
+    }
 }
 
 impl<'info, T: AccountSerialize + AccountDeserialize + Clone + fmt::Debug> fmt::Debug

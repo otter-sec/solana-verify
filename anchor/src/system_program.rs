@@ -29,15 +29,9 @@ impl ToAccountMetas for Transfer<'_> {
         is_signer: Option<bool>,
     ) -> Vec<otter_solana_program::instruction::AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.from.is_signer);
-        let from_meta = match self.from.is_writable {
-            false => AccountMeta::new_readonly(*self.from.key, is_signer),
-            true => AccountMeta::new(*self.from.key, is_signer),
-        };
-        let to_meta = match self.to.is_writable {
-            false => AccountMeta::new_readonly(*self.to.key, false),
-            true => AccountMeta::new(*self.to.key, false),
-        };
-        vec![from_meta, to_meta]
+        let from = self.from.to_account_meta(is_signer);
+        let to = self.to.to_account_meta(false);
+        vec![from, to]
     }
 }
 
@@ -67,15 +61,9 @@ impl ToAccountMetas for CreateAccount<'_> {
         is_signer: Option<bool>,
     ) -> Vec<otter_solana_program::instruction::AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.from.is_signer);
-        let from_meta = match self.from.is_writable {
-            false => AccountMeta::new_readonly(*self.from.key, is_signer),
-            true => AccountMeta::new(*self.from.key, is_signer),
-        };
-        let to_meta = match self.to.is_writable {
-            false => AccountMeta::new_readonly(*self.to.key, false),
-            true => AccountMeta::new(*self.to.key, false),
-        };
-        vec![from_meta, to_meta]
+        let from = self.from.to_account_meta(is_signer);
+        let to = self.to.to_account_meta(false);
+        vec![from, to]
     }
 }
 
@@ -103,10 +91,7 @@ pub struct Allocate<'info> {
 impl<'info> ToAccountMetas for Allocate<'info> {
     fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.account_to_allocate.is_signer);
-        let meta = match self.account_to_allocate.is_writable {
-            false => AccountMeta::new_readonly(*self.account_to_allocate.key, is_signer),
-            true => AccountMeta::new(*self.account_to_allocate.key, is_signer),
-        };
+        let meta = self.account_to_allocate.to_account_meta(is_signer);
         vec![meta]
     }
 }
@@ -133,10 +118,7 @@ pub struct Assign<'info> {
 impl<'info> ToAccountMetas for Assign<'info> {
     fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.account_to_assign.is_signer);
-        let meta = match self.account_to_assign.is_writable {
-            false => AccountMeta::new_readonly(*self.account_to_assign.key, is_signer),
-            true => AccountMeta::new(*self.account_to_assign.key, is_signer),
-        };
+        let meta = self.account_to_assign.to_account_meta(is_signer);
         vec![meta]
     }
 }
@@ -149,7 +131,7 @@ impl<'info> ToAccountInfos<'info> for Assign<'info> {
 
 pub fn assign<'info>(
     _ctx: CpiContext<'_, '_, '_, 'info, Assign<'info>>,
-    _program_id: Pubkey,
+    _program_id: &Pubkey,
 ) -> Result<()> {
     Ok(())
 }

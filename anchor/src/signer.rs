@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::prelude::ToAccountInfo;
 use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey, Key};
 
@@ -16,6 +18,20 @@ impl<'info> Key for Signer<'info> {
 impl<'info> ToAccountInfo<'info> for Signer<'info> {
     fn to_account_info(&self) -> AccountInfo<'info> {
         self.info.clone()
+    }
+}
+
+impl<'info> Deref for Signer<'info> {
+    type Target = AccountInfo<'info>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.info
+    }
+}
+
+impl<'info> AsRef<AccountInfo<'info>> for Signer<'info> {
+    fn as_ref(&self) -> &AccountInfo<'info> {
+        self.deref().as_ref()
     }
 }
 

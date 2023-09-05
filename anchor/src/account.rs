@@ -29,6 +29,10 @@ impl<'a, T> Account<'a, T> {
     pub fn set_inner(&mut self, inner: T) {
         self.account = inner;
     }
+
+    pub fn close(self, _info: AccountInfo<'_>) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl<'a, T: AnchorDeserialize + Owner> Account<'a, T> {

@@ -14,6 +14,17 @@ pub struct Vec<T> {
     pub size: usize,
 }
 
+#[derive(Debug)]
+pub struct VecIterator<'a, T> {
+    vec: &'a Vec<T>,
+    idx: usize,
+}
+
+pub struct VecIntoIterator<T> {
+    vec: Vec<T>,
+    idx: usize,
+}
+
 impl<T: Default> Default for Vec<T> {
     fn default() -> Self {
         Vec {
@@ -61,6 +72,10 @@ impl<T> Vec<T> {
 
     pub fn is_empty(&self) -> bool {
         self.size == 0
+    }
+
+    pub fn iter(&self) -> VecIterator<T> {
+        VecIterator { vec: self, idx: 0 }
     }
 
     pub fn contains(&self, t: &T) -> bool
@@ -138,6 +153,52 @@ impl<T> ops::DerefMut for Vec<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe { slice::from_raw_parts_mut(self.data.as_mut_ptr(), self.size) }
+    }
+}
+
+impl<'a, T> Iterator for VecIterator<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx >= self.vec.size {
+            return None;
+        }
+
+        let res = &self.vec.data[self.idx];
+        self.idx += 1;
+        Some(res)
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Vec<T> {
+    type Item = &'a T;
+    type IntoIter = VecIterator<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T: Clone> Iterator for VecIntoIterator<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx >= self.vec.size {
+            return None;
+        }
+
+        let res = self.vec.data[self.idx].clone();
+        self.idx += 1;
+        Some(res)
+    }
+}
+
+impl<T: Clone> IntoIterator for Vec<T> {
+    type Item = T;
+    type IntoIter = VecIntoIterator<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        VecIntoIterator { vec: self, idx: 0 }
     }
 }
 

@@ -26,7 +26,7 @@ impl<'info, T> Deref for Program<'info, T> {
 
 impl<'info, T> AsRef<AccountInfo<'info>> for Program<'info, T> {
     fn as_ref(&self) -> &AccountInfo<'info> {
-        &self.deref().as_ref()
+        self.deref()
     }
 }
 

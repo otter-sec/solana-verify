@@ -31,7 +31,7 @@ impl<'info> Deref for Signer<'info> {
 
 impl<'info> AsRef<AccountInfo<'info>> for Signer<'info> {
     fn as_ref(&self) -> &AccountInfo<'info> {
-        self.deref().as_ref()
+        self.deref()
     }
 }
 

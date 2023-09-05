@@ -186,6 +186,12 @@ pub enum Error {
     #[error(transparent)]
     SystemTime(#[from] std::time::SystemTimeError),
 
+    #[error(transparent)]
+    Borrow(#[from] std::cell::BorrowError),
+
+    #[error(transparent)]
+    BorrowMut(#[from] std::cell::BorrowMutError),
+
     #[error("generic error")]
     Generic,
 }

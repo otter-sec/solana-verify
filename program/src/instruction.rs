@@ -4,6 +4,7 @@ use crate::vec::fast::Vec;
 #[cfg(not(any(kani, feature = "kani")))]
 use std::vec::Vec;
 
+#[derive(Default)]
 pub struct Instruction {
     /// Pubkey of the instruction processor that executes this instruction
     pub program_id: Pubkey,

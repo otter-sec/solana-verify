@@ -1,6 +1,9 @@
 use std::{
     marker::PhantomData,
-    ops::{self, Index, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
+    ops::{
+        self, Index, IndexMut, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo,
+        RangeToInclusive,
+    },
 };
 
 use crate::Result;
@@ -212,5 +215,41 @@ impl<T> Index<RangeToInclusive<usize>> for SparseSlice<T> {
 
     fn index(&self, _: RangeToInclusive<usize>) -> &[T] {
         &[]
+    }
+}
+
+impl<T> IndexMut<Range<usize>> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: Range<usize>) -> &mut Self::Output {
+        &mut []
+    }
+}
+
+impl<T> IndexMut<RangeFrom<usize>> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: RangeFrom<usize>) -> &mut Self::Output {
+        &mut []
+    }
+}
+
+impl<T> IndexMut<RangeFull> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: RangeFull) -> &mut Self::Output {
+        &mut []
+    }
+}
+
+impl<T> IndexMut<RangeInclusive<usize>> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: RangeInclusive<usize>) -> &mut Self::Output {
+        &mut []
+    }
+}
+
+impl<T> IndexMut<RangeTo<usize>> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: RangeTo<usize>) -> &mut Self::Output {
+        &mut []
+    }
+}
+
+impl<T> IndexMut<RangeToInclusive<usize>> for SparseSlice<T> {
+    fn index_mut(&mut self, _index: RangeToInclusive<usize>) -> &mut Self::Output {
+        &mut []
     }
 }

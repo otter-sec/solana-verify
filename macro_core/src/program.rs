@@ -168,7 +168,7 @@ fn check_expr_is_ignored(expr: &Expr) -> bool {
     }
 }
 
-fn remove_verify_ignore_statements(item: &mut ItemFn) {
+pub fn remove_verify_ignore_statements(item: &mut ItemFn) {
     for stmt in std::mem::take(&mut item.block.stmts) {
         let contains_ignore = match &stmt {
             Stmt::Local(local) => local.attrs.iter().any(|a| a.path.is_ident("verify_ignore")),

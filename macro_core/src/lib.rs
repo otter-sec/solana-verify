@@ -1,3 +1,4 @@
+pub mod access_control;
 pub mod account;
 pub mod error;
 pub mod invariant;

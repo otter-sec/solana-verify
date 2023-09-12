@@ -52,7 +52,9 @@ pub fn verify_unpackable(types: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn access_control(_args: TokenStream, item: TokenStream) -> TokenStream {
-    item
+    core::access_control::access_control(item.into())
+        .expect("access_control used on non-function?")
+        .into()
 }
 
 #[cfg(feature = "verify")]

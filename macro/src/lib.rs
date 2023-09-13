@@ -51,15 +51,15 @@ pub fn verify_unpackable(types: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn access_control(_args: TokenStream, item: TokenStream) -> TokenStream {
-    core::access_control::access_control(item.into())
+pub fn access_control(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::access_control::access_control(args.into(), item.into())
         .expect("access_control used on non-function?")
         .into()
 }
 
 #[proc_macro_attribute]
 pub fn helper_fn(_args: TokenStream, item: TokenStream) -> TokenStream {
-    core::access_control::access_control(item.into())
+    core::helper_fn::helper_fn(item.into())
         .expect("helper_fn used on non-function?")
         .into()
 }

@@ -275,8 +275,6 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     for item in &mut items.as_mut().unwrap().1 {
         if let Item::Fn(item) = item {
             if let Ok(harness) = verification_harness_of(name, item) {
-                println!("created harness for: {:?}", item.sig.ident);
-                println!("{}", harness);
                 harnesses.push(harness);
             } else {
                 println!("ignored harness for: {:?}", item.sig.ident);

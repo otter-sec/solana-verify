@@ -5,9 +5,9 @@ use {anyhow::Result, proc_macro2::TokenStream, quote::quote, syn::ItemFn};
 use crate::program::remove_verify_ignore_statements;
 
 #[cfg(feature = "anchor")]
-pub fn access_control(input: TokenStream) -> Result<TokenStream> {
+pub fn helper_fn(input: TokenStream) -> Result<TokenStream> {
     let Ok(mut item) = syn::parse2::<ItemFn>(input) else {
-        panic!("use #[helper] on a function")
+        panic!("use #[helper_fn] on a function")
     };
     remove_verify_ignore_statements(&mut item);
 

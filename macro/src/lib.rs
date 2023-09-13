@@ -57,6 +57,13 @@ pub fn access_control(_args: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
+#[proc_macro_attribute]
+pub fn helper_fn(_args: TokenStream, item: TokenStream) -> TokenStream {
+    core::access_control::access_control(item.into())
+        .expect("helper_fn used on non-function?")
+        .into()
+}
+
 #[cfg(feature = "verify")]
 #[proc_macro_attribute]
 pub fn verify(args: TokenStream, item: TokenStream) -> TokenStream {

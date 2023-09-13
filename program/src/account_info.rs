@@ -47,7 +47,7 @@ impl<'a> AccountInfo<'a> {
     }
 
     pub fn realloc(&self, _new_len: usize, _zero_init: bool) -> Result<()> {
-        todo!()
+        Ok(())
     }
 
     pub fn data_len(&self) -> usize {

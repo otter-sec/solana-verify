@@ -17,6 +17,12 @@ pub fn error_code(_args: TokenStream, item: TokenStream) -> Result<TokenStream> 
                 <Self as std::fmt::Debug>::fmt(self, f)
             }
         }
+
+        impl From<#ident> for anchor_lang::prelude::Error {
+            fn from(value: #ident) -> Self {
+                anchor_lang::prelude::Error::CustomError(value.to_string())
+            }
+        }
     };
     Ok(res)
 }

@@ -194,4 +194,8 @@ pub enum Error {
 
     #[error("generic error")]
     Generic,
+
+    // Custom errors for the program specific errors.
+    #[error("An error occurred: {0}")]
+    CustomError(String),
 }

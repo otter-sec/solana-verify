@@ -55,7 +55,7 @@ impl<T> Vec<T> {
     }
 
     pub fn insert(&mut self, pos: usize, t: T) {
-        if pos >= self.size {
+        if pos > self.size {
             panic!("oob");
         }
 

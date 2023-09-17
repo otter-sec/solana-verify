@@ -45,16 +45,9 @@ impl Pubkey {
         *self
     }
 
-    // keep hashing pubkey for the number of seeds there are and then create a pubkey by truncating
-    pub fn create_program_address(seeds: &[&[u8]], program_id: &Self) -> Result<Self, Error> {
-        let mut res = *program_id;
-        for _ in seeds {
-            let mut hasher = DefaultHasher::new();
-            res.hash(&mut hasher);
-            let bytes = hasher.finish().to_le_bytes();
-            res = Self::new(&bytes[..PUBKEY_BYTES]);
-        }
-        Ok(res)
+    #[cfg(any(kani, feature = "kani"))]
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Pubkey {
+        kani::any()
     }
 }
 

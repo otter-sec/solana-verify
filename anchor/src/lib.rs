@@ -40,9 +40,9 @@ pub mod prelude {
     pub use crate::signer::{self, Signer};
 
     pub use super::{
-        err, require, require_eq, require_keys_eq, require_keys_neq, AccountDeserialize,
-        AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner, Space, ToAccountInfo,
-        ToAccountInfos, ToAccountMetas,
+        err, require, require_eq, require_gte, require_keys_eq, require_keys_neq,
+        AccountDeserialize, AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner,
+        Space, ToAccountInfo, ToAccountInfos, ToAccountMetas,
     };
     pub use crate::system_program::{self, System};
     pub use crate::sysvar::Sysvar;
@@ -141,6 +141,20 @@ macro_rules! require_keys_neq {
     };
     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
         if $key_1 == $key_2 {
+            return Err(Error::Generic);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_gte {
+    ($value1: expr, $value2: expr, $error_code: expr $(,)?) => {
+        if $value1 < $value2 {
+            return Err(Error::Generic);
+        }
+    };
+    ($value1: expr, $value2: expr $(,)?) => {
+        if $value1 < $value2 {
             return Err(Error::Generic);
         }
     };

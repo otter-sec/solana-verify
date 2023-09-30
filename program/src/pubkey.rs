@@ -1,11 +1,7 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
+use std::hash::Hash;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::error::Error;
 pub const PUBKEY_BYTES: usize = 1;
 
 #[derive(

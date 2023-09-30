@@ -1,5 +1,7 @@
 use crate::error::Error;
 
+pub type Slot = u64;
+
 pub static mut UNIX_TIMESTAMP: i64 = 0i64;
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]

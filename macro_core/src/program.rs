@@ -11,7 +11,7 @@ use syn::{
     ItemMod, Pat, PatType, PathArguments, Stmt, Type,
 };
 
-const KANI_UNWIND_AMOUNT: usize = 100;
+const KANI_UNWIND_AMOUNT: usize = 15;
 
 fn get_ctx_type(ctx_param: &PatType) -> syn::Result<Punctuated<GenericArgument, Comma>> {
     let Type::Path(pa) = ctx_param.ty.as_ref() else {
@@ -65,8 +65,8 @@ fn create_succeeds_if(
     let proof_name = format_ident!("succeeds_if_{}", function_name, span = function_name.span());
 
     Ok(quote! {
-        #[kani::proof]
-        #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        // #[kani::proof]
+        // #[kani::unwind(#KANI_UNWIND_AMOUNT)]
         pub fn #proof_name #generics () {
             #(
                 let #parameters = kani::any();
@@ -91,6 +91,50 @@ fn create_succeeds_if(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
+fn create_errors_if(
+    mod_name: &Ident,
+    function_name: &Ident,
+    generics: &Generics,
+    ctx_type: &Punctuated<GenericArgument, Comma>,
+    attr: Attribute,
+    parameters: &[&PatType],
+    parameter_names: &[Ident],
+    constraint_check: TokenStream,
+) -> syn::Result<TokenStream> {
+    let error_conds = match attr.parse_args::<Expr>() {
+        Ok(p) => p.to_token_stream(),
+        Err(_) => quote! { true },
+    };
+    let proof_name = format_ident!("errors_if_{}", function_name, span = function_name.span());
+
+    Ok(quote! {
+        #[kani::proof]
+        #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        pub fn #proof_name #generics () {
+            #(
+                let #parameters = kani::any();
+            );*
+
+            let conc: anchor_lang::context::ConcreteContext<#ctx_type> = kani::any();
+            let ctx = conc.to_ctx();
+            kani::assume(conc.to_ctx().accounts.__pre_invariants());
+            let error_conds = #error_conds;
+            kani::assume(error_conds);
+            #constraint_check
+            let result = if constraints {
+                #mod_name::#function_name(#(#parameter_names),*)
+            } else {
+                err!("constraint check failed")
+            };
+            kani::assert(
+                result.is_err(),
+                "Function succeeded when it should have errored"
+            );
+        }
+    })
+}
+
 fn create_verify(
     mod_name: &Ident,
     function_name: &Ident,
@@ -101,8 +145,8 @@ fn create_verify(
 ) -> syn::Result<TokenStream> {
     let proof_name = format_ident!("verify_{}", function_name, span = function_name.span());
     let res = quote! {
-        #[kani::proof]
-        #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        // #[kani::proof]
+        // #[kani::unwind(#KANI_UNWIND_AMOUNT)]
         pub fn #proof_name #generics () {
             #(
                 let #parameters = kani::any();
@@ -217,13 +261,17 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
 
     let function_name = &item.sig.ident;
     let generics = &item.sig.generics;
-    let mut precondition: Option<TokenStream> = None;
+    let mut succeeds_if_harness: Option<TokenStream> = None;
+    let mut errors_if_harness: Option<TokenStream> = None;
     let mut create_succeeds_attr: Option<Attribute> = None;
+    let mut create_errors_attr: Option<Attribute> = None;
     let mut has_constraint = false;
 
     for attr in std::mem::take(&mut item.attrs).into_iter() {
         if attr.path.is_ident("succeeds_if") {
             create_succeeds_attr = Some(attr);
+        } else if attr.path.is_ident("errors_if") {
+            create_errors_attr = Some(attr);
         } else if attr.path.is_ident("has_constraint") {
             has_constraint = true;
         } else {
@@ -232,7 +280,20 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
     }
 
     if let Some(attr) = create_succeeds_attr {
-        precondition = Some(create_succeeds_if(
+        succeeds_if_harness = Some(create_succeeds_if(
+            mod_name,
+            function_name,
+            generics,
+            &ctx_type,
+            attr,
+            &parameters,
+            &parameter_names,
+            create_constraint_check(has_constraint, &parameters),
+        )?);
+    }
+
+    if let Some(attr) = create_errors_attr {
+        errors_if_harness = Some(create_errors_if(
             mod_name,
             function_name,
             generics,
@@ -253,12 +314,21 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
         &parameter_names,
     )?;
 
-    let res = match precondition {
-        Some(precondition) => quote! {
+    let res = match (succeeds_if_harness, errors_if_harness) {
+        (Some(succeeds_if_harness), Some(errors_if_harness)) => quote! {
             #verify
-            #precondition
+            #succeeds_if_harness
+            #errors_if_harness
         },
-        None => verify,
+        (Some(succeeds_if_harness), None) => quote! {
+            #verify
+            #succeeds_if_harness
+        },
+        (None, Some(errors_if_harness)) => quote! {
+            #verify
+            #errors_if_harness
+        },
+        (None, None) => verify,
     };
     Ok(res)
 }

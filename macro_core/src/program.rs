@@ -11,7 +11,7 @@ use syn::{
     ItemMod, Pat, PatType, PathArguments, Stmt, Type,
 };
 
-const KANI_UNWIND_AMOUNT: usize = 15;
+const KANI_UNWIND_AMOUNT: usize = 100;
 
 fn get_ctx_type(ctx_param: &PatType) -> syn::Result<Punctuated<GenericArgument, Comma>> {
     let Type::Path(pa) = ctx_param.ty.as_ref() else {
@@ -65,8 +65,8 @@ fn create_succeeds_if(
     let proof_name = format_ident!("succeeds_if_{}", function_name, span = function_name.span());
 
     Ok(quote! {
-        // #[kani::proof]
-        // #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        #[kani::proof]
+        #[kani::unwind(#KANI_UNWIND_AMOUNT)]
         pub fn #proof_name #generics () {
             #(
                 let #parameters = kani::any();
@@ -145,8 +145,8 @@ fn create_verify(
 ) -> syn::Result<TokenStream> {
     let proof_name = format_ident!("verify_{}", function_name, span = function_name.span());
     let res = quote! {
-        // #[kani::proof]
-        // #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        #[kani::proof]
+        #[kani::unwind(#KANI_UNWIND_AMOUNT)]
         pub fn #proof_name #generics () {
             #(
                 let #parameters = kani::any();

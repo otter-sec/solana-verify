@@ -1,6 +1,9 @@
 pub mod account_info;
 pub mod borsh;
 pub mod clock;
+pub mod collections {
+    pub mod hashmap;
+}
 pub mod decode_error;
 pub mod entrypoint;
 pub mod error;

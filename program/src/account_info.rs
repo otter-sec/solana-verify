@@ -11,7 +11,7 @@ use crate::error::Error;
 #[cfg(any(kani, feature = "kani"))]
 use crate::pubkey::kani_new_pubkey;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct AccountInfo<'a> {
     pub key: &'a Pubkey,
     pub is_signer: bool,

@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{clock::Slot, error::Error, pubkey::Pubkey, vec};
+use solana_program::{clock::Slot, error::Error, pubkey::Pubkey, vec::fast::Vec};
 use std::borrow::Cow;
 
 /// The maximum number of addresses that a lookup table can hold
@@ -47,7 +47,7 @@ impl kani::Arbitrary for LookupTableMeta {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct AddressLookupTable<'a> {
     pub meta: LookupTableMeta,
-    pub addresses: Cow<'a, [Pubkey]>,
+    pub addresses: Cow<'a, Vec<Pubkey>>,
 }
 
 #[cfg(any(kani, feature = "kani"))]
@@ -55,7 +55,7 @@ impl<'a> AddressLookupTable<'a> {
     pub fn deserialize(_data: &[u8]) -> Result<Self, Error> {
         Ok(Self {
             meta: kani::any::<LookupTableMeta>(),
-            addresses: Cow::from(vec![*kani_new_pubkey()]),
+            addresses: Cow::Owned(solana_program::vec![*kani_new_pubkey()]),
         })
     }
 }
@@ -63,9 +63,12 @@ impl<'a> AddressLookupTable<'a> {
 #[cfg(not(any(kani, feature = "kani")))]
 impl<'a> AddressLookupTable<'a> {
     pub fn deserialize(_data: &[u8]) -> Result<Self, Error> {
+        let mut vect = Vec::new();
+        vect.push(Pubkey::default());
+
         Ok(Self {
             meta: LookupTableMeta::default(),
-            addresses: Cow::from(vec![Pubkey::default()]),
+            addresses: Cow::Owned(solana_program::vec![Pubkey::default()]),
         })
     }
 }
@@ -75,7 +78,7 @@ impl<'a> kani::Arbitrary for AddressLookupTable<'a> {
     fn any() -> Self {
         Self {
             meta: kani::any::<LookupTableMeta>(),
-            addresses: Cow::from(vec![*kani_new_pubkey()]),
+            addresses: Cow::Owned(solana_program::vec![*kani_new_pubkey()]),
         }
     }
 }

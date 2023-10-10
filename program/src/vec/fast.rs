@@ -78,6 +78,14 @@ impl<T> Vec<T> {
         VecIterator { vec: self, idx: 0 }
     }
 
+    pub fn get(&self, idx: usize) -> Option<&T> {
+        if idx >= self.size {
+            return None;
+        }
+
+        Some(&self.data[idx])
+    }
+
     pub fn contains(&self, t: &T) -> bool
     where
         T: PartialEq,

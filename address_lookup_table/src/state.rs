@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{clock::Slot, pubkey::Pubkey};
+use solana_program::{clock::Slot, error::Error, pubkey::Pubkey};
 use std::borrow::Cow;
 
 /// The maximum number of addresses that a lookup table can hold
@@ -44,10 +44,30 @@ impl kani::Arbitrary for LookupTableMeta {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct AddressLookupTable<'a> {
     pub meta: LookupTableMeta,
     pub addresses: Cow<'a, [Pubkey]>,
+}
+
+#[cfg(any(kani, feature = "kani"))]
+impl<'a> AddressLookupTable<'a> {
+    pub fn deserialize(_data: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            meta: kani::any::<LookupTableMeta>(),
+            addresses: Cow::from(vec![*kani_new_pubkey()]),
+        })
+    }
+}
+
+#[cfg(not(any(kani, feature = "kani")))]
+impl<'a> AddressLookupTable<'a> {
+    pub fn deserialize(_data: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            meta: LookupTableMeta::default(),
+            addresses: Cow::from(vec![Pubkey::default()]),
+        })
+    }
 }
 
 #[cfg(any(kani, feature = "kani"))]

@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::{clock::Slot, error::Error, pubkey::Pubkey};
+use solana_program::{clock::Slot, error::Error, pubkey::Pubkey, vec};
 use std::borrow::Cow;
 
 /// The maximum number of addresses that a lookup table can hold

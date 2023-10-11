@@ -134,6 +134,19 @@ impl<T> Vec<T> {
         Err(self.size)
     }
 
+    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, mut f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a T) -> B,
+        B: Ord,
+    {
+        for i in 0..self.size {
+            if f(&self.data[i]) == *b {
+                return Ok(i);
+            }
+        }
+        Err(self.size)
+    }
+
     pub fn as_slice(&self) -> &[T] {
         &self.data[..self.size]
     }

@@ -42,8 +42,15 @@ impl Pubkey {
     }
 
     #[cfg(any(kani, feature = "kani"))]
-    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Pubkey {
-        kani::any()
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Option<Pubkey> {
+        Some(kani::any())
+    }
+}
+
+#[cfg(not(any(kani, feature = "kani")))]
+impl Pubkey {
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Option<Pubkey> {
+        Some(Pubkey::default())
     }
 }
 

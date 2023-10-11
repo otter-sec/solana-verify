@@ -1,11 +1,7 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
+use std::hash::Hash;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::error::Error;
 pub const PUBKEY_BYTES: usize = 1;
 
 #[derive(
@@ -46,8 +42,15 @@ impl Pubkey {
     }
 
     #[cfg(any(kani, feature = "kani"))]
-    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Pubkey {
-        kani::any()
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Option<Pubkey> {
+        Some(kani::any())
+    }
+}
+
+#[cfg(not(any(kani, feature = "kani")))]
+impl Pubkey {
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Option<Pubkey> {
+        Some(Pubkey::default())
     }
 }
 

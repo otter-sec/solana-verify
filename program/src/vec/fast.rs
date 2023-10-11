@@ -78,6 +78,14 @@ impl<T> Vec<T> {
         VecIterator { vec: self, idx: 0 }
     }
 
+    pub fn get(&self, idx: usize) -> Option<&T> {
+        if idx >= self.size {
+            return None;
+        }
+
+        Some(&self.data[idx])
+    }
+
     pub fn contains(&self, t: &T) -> bool
     where
         T: PartialEq,
@@ -123,6 +131,19 @@ impl<T> Vec<T> {
             }
         }
 
+        Err(self.size)
+    }
+
+    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, mut f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a T) -> B,
+        B: Ord,
+    {
+        for i in 0..self.size {
+            if f(&self.data[i]) == *b {
+                return Ok(i);
+            }
+        }
         Err(self.size)
     }
 

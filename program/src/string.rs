@@ -5,7 +5,7 @@ use std::vec::Vec;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-#[derive(Clone, Debug, BorshSerialize, BorshDeserialize, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, BorshSerialize, BorshDeserialize, Eq, PartialEq)]
 
 pub struct String {
     vec: Vec<u8>,
@@ -14,6 +14,12 @@ pub struct String {
 impl String {
     pub fn new() -> String {
         String { vec: Vec::new() }
+    }
+}
+
+impl Default for String {
+    fn default() -> Self {
+        String::new()
     }
 }
 

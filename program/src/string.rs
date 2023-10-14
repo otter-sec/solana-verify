@@ -3,7 +3,9 @@ use crate::vec::fast::Vec;
 #[cfg(not(any(kani, feature = "kani")))]
 use std::vec::Vec;
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
+use borsh::{BorshDeserialize, BorshSerialize};
+
+#[derive(Clone, Debug, BorshSerialize, BorshDeserialize, Eq, PartialEq, Default)]
 
 pub struct String {
     vec: Vec<u8>,
@@ -12,12 +14,6 @@ pub struct String {
 impl String {
     pub fn new() -> String {
         String { vec: Vec::new() }
-    }
-}
-
-impl Default for &String {
-    fn default() -> Self {
-        &String { t: Vec::new() }
     }
 }
 

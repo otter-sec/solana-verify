@@ -55,6 +55,7 @@ pub mod prelude {
     pub use solana_program::instruction::AccountMeta;
     pub use solana_program::pubkey::Pubkey;
     pub use solana_program::rent::Rent;
+    pub use solana_program::string::String;
     pub use solana_program::vec::fast::Vec;
     pub use solana_program::Key;
     pub use solana_program::Result;

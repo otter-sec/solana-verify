@@ -17,6 +17,7 @@ pub mod program_option;
 pub mod program_pack;
 pub mod pubkey;
 pub mod rent;
+pub mod string;
 pub mod stupid_refcell;
 pub mod system_instruction;
 pub mod system_program;

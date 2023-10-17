@@ -1,16 +1,22 @@
 use anyhow::Result;
 use proc_macro2::TokenStream;
-use quote::quote;
-use syn::ItemEnum;
+use quote::{quote, ToTokens};
+use syn::{parse2, ItemEnum};
 
 pub fn error_code(_args: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    let val = syn::parse2::<ItemEnum>(item.clone())?;
+    let mut val: ItemEnum = parse2(item.clone())?;
+    for variant in val.variants.iter_mut() {
+        variant.attrs.retain(|attr| !attr.path.is_ident("msg"));
+    }
+
+    let filtered_item = val.clone().into_token_stream();
+
     let ident = val.ident;
     let generics = val.generics;
 
     let res = quote! {
         #[derive(Debug, thiserror::Error)]
-        #item
+        #filtered_item
 
         impl #generics std::fmt::Display for #ident #generics {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

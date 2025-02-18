@@ -10,6 +10,7 @@ use syn::{
     ExprUnary, ExprUnsafe, ExprWhile, ExprYield, FnArg, GenericArgument, Generics, Item, ItemFn,
     ItemMod, Pat, PatType, PathArguments, Stmt, Type,
 };
+use convert_case::{Case, Casing};
 
 const KANI_UNWIND_AMOUNT: usize = 100;
 
@@ -342,6 +343,9 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     }
 
     let mut harnesses = Vec::new();
+    let mut instruction_structs = Vec::new();
+    let mut discriminator_value = 1u8;
+
     for item in &mut items.as_mut().unwrap().1 {
         if let Item::Fn(item) = item {
             if let Ok(harness) = verification_harness_of(name, item) {
@@ -349,12 +353,32 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
             } else {
                 println!("ignored harness for: {:?}", item.sig.ident);
             }
+
+            // Create struct and discriminator for each function
+            let struct_name = format_ident!("{}", item.sig.ident.to_string().to_case(Case::Title).replace(" ", ""));
+            let discriminator = discriminator_value;
+            discriminator_value += 1;
+
+            instruction_structs.push(quote! {
+                pub struct #struct_name;
+
+                impl #struct_name {
+                    pub const DISCRIMINATOR: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, #discriminator];
+                }
+            });
         }
     }
+
+    let instruction_mod = quote! {
+        mod instruction {
+            #(#instruction_structs)*
+        }
+    };
 
     let res = quote! {
         #item
         #(#harnesses)*
+        #instruction_mod
     };
     Ok(res)
 }

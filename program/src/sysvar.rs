@@ -1,5 +1,6 @@
 use crate::account_info::AccountInfo;
 use crate::program_error::ProgramError;
+use crate::pubkey::Pubkey;
 
 pub mod rent {
     use super::Sysvar;
@@ -11,6 +12,30 @@ pub mod rent {
         Pubkey { t: [43] }
     }
 }
+
+
+pub mod instructions {
+    use crate::pubkey::Pubkey;
+
+    pub struct Instructions;
+
+    impl Instructions {
+        pub fn id() -> Pubkey {
+            Pubkey { t: [44] }
+        }
+    }
+}
+
+pub trait SysvarId {
+    /// The `Pubkey` of the sysvar.
+    fn id() -> Pubkey;
+
+    /// Returns `true` if the given pubkey is the program ID.
+    fn check_id(pubkey: &Pubkey) -> bool;
+}
+
+
+
 
 // note: this is different than Sysvar struct from anchor
 pub trait Sysvar: Sized {

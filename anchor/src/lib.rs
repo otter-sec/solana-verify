@@ -128,13 +128,12 @@ macro_rules! error {
         Err(solana_program::error::Error::Generic)
     };
 }
-// #[macro_export]
-// macro_rules! msg {
-//     ($msg:expr) => {
-//         $crate::log::sol_log($msg)
-//     };
-//     ($($arg:tt)*) => ($crate::log::sol_log(&format!($($arg)*)));
-// }
+
+#[macro_export]
+macro_rules! msg {
+    ($msg:expr) => {};
+    ($($arg:tt)*) => {};
+}
 
 #[macro_export]
 macro_rules! require {
@@ -144,6 +143,12 @@ macro_rules! require {
         }
     };
     ($invariant:expr, $error:expr $(,)?) => {
+        if !($invariant) {
+            return Err(Error::Generic);
+        }
+    };
+    // when no error is provided
+    ($invariant:expr $(,)?) => {
         if !($invariant) {
             return Err(Error::Generic);
         }
@@ -162,6 +167,12 @@ macro_rules! require_eq {
             return Err(solana_program::error::Error::Generic);
         }
     };
+    // when no error is provided
+    ($val_1:expr, $val_2:expr $(,)?) => {
+        if $val_1 != $val_2 {
+            return Err(solana_program::error::Error::Generic);
+        }
+    };
 }
 
 #[macro_export]
@@ -172,6 +183,12 @@ macro_rules! require_neq {
         }
     };
     ($val_1:expr, $val_2:expr, $error:expr $(,)?) => {
+        if $val_1 == $val_2 {
+            return Err(solana_program::error::Error::Generic);
+        }
+    };
+    // when no error is provided
+    ($val_1:expr, $val_2:expr $(,)?) => {
         if $val_1 == $val_2 {
             return Err(solana_program::error::Error::Generic);
         }
@@ -190,6 +207,12 @@ macro_rules! require_keys_eq {
             return Err(solana_program::error::Error::Generic);
         }
     };
+    // when no error is provided
+    ($key_1:expr, $key_2:expr $(,)?) => {
+        if $key_1 != $key_2 {
+            return Err(solana_program::error::Error::Generic);
+        }
+    };
 }
 
 #[macro_export]
@@ -200,6 +223,12 @@ macro_rules! require_keys_neq {
         }
     };
     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
+        if $key_1 == $key_2 {
+            return Err(solana_program::error::Error::Generic);
+        }
+    };
+    // when no error is provided
+    ($key_1:expr, $key_2:expr $(,)?) => {
         if $key_1 == $key_2 {
             return Err(solana_program::error::Error::Generic);
         }

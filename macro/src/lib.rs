@@ -82,3 +82,8 @@ pub fn verify(args: TokenStream, item: TokenStream) -> TokenStream {
 pub fn zero_copy(_: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
+
+#[proc_macro_attribute]
+pub fn stub(attr: TokenStream, item: TokenStream) -> TokenStream {
+    core::stub::stub(attr.into(), item.into()).into()
+}

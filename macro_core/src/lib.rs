@@ -4,7 +4,7 @@ pub mod error;
 pub mod helper_fn;
 pub mod invariant;
 pub mod space;
-
+pub mod stub;
 #[cfg(feature = "verify")]
 pub mod verify;
 

@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{fmt::{self, Display, Formatter}, hash::Hash};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -21,6 +21,13 @@ pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],
 }
 
+
+impl Display for Pubkey {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.t)
+    }
+}
+
 impl Pubkey {
     pub fn new(k: &[u8]) -> Pubkey {
         Pubkey {
@@ -29,8 +36,14 @@ impl Pubkey {
         }
     }
 
-    pub fn new_from_array(arr: [u8; PUBKEY_BYTES]) -> Pubkey {
-        Pubkey { t: arr }
+    pub fn new_from_array<T: AsRef<[u8]>>(arr: T) -> Pubkey {
+        let bytes = arr.as_ref();
+        let mut pubkey_bytes = [0u8; PUBKEY_BYTES];
+        
+        let len = bytes.len().min(PUBKEY_BYTES);
+        pubkey_bytes[..len].copy_from_slice(&bytes[..len]);
+
+        Pubkey { t: pubkey_bytes }
     }
 
     pub fn to_bytes(&self) -> [u8; PUBKEY_BYTES] {

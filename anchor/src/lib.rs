@@ -18,7 +18,7 @@ use std::{
 
 pub use otter_solana_program as solana_program;
 use otter_solana_program::{account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey};
-
+pub use otter_solana_program::Key;
 
 pub type Result<T> = std::result::Result<T, solana_program::error::Error>;
 
@@ -31,17 +31,9 @@ pub mod accounts {
     pub use crate::account_loader::{self, AccountLoader};
 }
 
+pub trait Bumps{}
 
-pub trait Key {
-    fn key(&self) -> Pubkey;
-}
-
-impl Key for Pubkey {
-    fn key(&self) -> Pubkey {
-        *self
-    }
-}
-
+pub trait ZeroCopy : Discriminator {}
 
 pub trait Discriminator {
     const DISCRIMINATOR: [u8; 8];
@@ -67,7 +59,7 @@ pub mod prelude {
 
     pub use otter_solana_macro::{
         access_control, account, declare_id, error_code, helper_fn, invariant, program, Accounts,
-        InitSpace, zero_copy, stub,
+        InitSpace, zero_copy, stub
     };
 
     pub use crate::account::{self, Account};
@@ -80,7 +72,7 @@ pub mod prelude {
     pub use super::{
         err, error, require, require_eq, require_neq, require_gt, require_gte, require_keys_eq, require_keys_neq,
         AccountDeserialize, AccountSerialize, Accounts, AccountsClose, AccountsExit, Id, Owner,
-        Space, ToAccountInfo, ToAccountInfos, ToAccountMetas,
+        Space, ToAccountInfo, ToAccountInfos, ToAccountMetas
     };
     pub use crate::system_program::{self, System};
     pub use crate::sysvar::Sysvar;
@@ -125,7 +117,7 @@ macro_rules! err {
 #[macro_export]
 macro_rules! error {
     ($error:expr) => {
-        Err(solana_program::error::Error::Generic)
+        solana_program::error::Error::Generic
     };
 }
 
@@ -346,6 +338,10 @@ pub trait AccountsExit<'info>: ToAccountMetas + ToAccountInfos<'info> {
 
 pub trait Owner {
     fn owner() -> Pubkey;
+}
+
+pub trait Arbitrary {
+    fn any() -> Self;
 }
 
 pub trait ToAccountInfos<'info> {

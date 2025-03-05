@@ -39,7 +39,7 @@ impl ToAccountMetas for Transfer<'_> {
 
 impl<'info> ToAccountInfos<'info> for Transfer<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.from.clone(), self.to.clone()]
+        vec![self.from, self.to]
     }
 }
 
@@ -71,7 +71,7 @@ impl ToAccountMetas for CreateAccount<'_> {
 
 impl<'info> ToAccountInfos<'info> for CreateAccount<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.from.clone(), self.to.clone()]
+        vec![self.from, self.to]
     }
 }
 
@@ -100,7 +100,7 @@ impl<'info> ToAccountMetas for Allocate<'info> {
 
 impl<'info> ToAccountInfos<'info> for Allocate<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.account_to_allocate.clone()]
+        vec![self.account_to_allocate]
     }
 }
 
@@ -127,7 +127,7 @@ impl<'info> ToAccountMetas for Assign<'info> {
 
 impl<'info> ToAccountInfos<'info> for Assign<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.account_to_assign.clone()]
+        vec![self.account_to_assign]
     }
 }
 

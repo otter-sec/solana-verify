@@ -1,12 +1,10 @@
 use onchor::prelude::AccountMeta;
 use onchor::solana_program::account_info::AccountInfo;
 
-use onchor::solana_program::program_pack::Pack;
 use onchor::solana_program::pubkey::Pubkey;
 use onchor::system_program::Transfer;
-use onchor::{context::CpiContext, Accounts};
+use onchor::context::CpiContext;
 use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas};
-use std::ops::Deref;
 
 use crate::token_2022::TransferChecked;
 
@@ -38,18 +36,18 @@ pub struct Burn<'info> {
 
 
 impl ToAccountMetas for Burn<'_> {
-    fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
+    fn to_account_metas(&self, _: Option<bool>) -> Vec<AccountMeta> {
         vec![self.mint.to_account_meta(false), self.from.to_account_meta(false), self.authority.to_account_meta(false)]
     }
 }
 
 impl<'info> ToAccountInfos<'info> for Burn<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.mint.clone(), self.from.clone(), self.authority.clone()]
+        vec![self.mint, self.from, self.authority]
     }
 }
 
-pub fn burn<'info>(ctx: CpiContext<'_, '_, '_, 'info, Burn<'info>>, amount: u64) -> Result<()> {
+pub fn burn<'info>(_: CpiContext<'_, '_, '_, 'info, Burn<'info>>, _: u64) -> Result<()> {
     Ok(())
 }
 
@@ -62,22 +60,23 @@ pub struct MintTo<'info> {
 }
 
 impl ToAccountMetas for MintTo<'_> {
-    fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
+    fn to_account_metas(&self, _: Option<bool>) -> Vec<AccountMeta> {
         vec![self.mint.to_account_meta(false), self.to.to_account_meta(false), self.authority.to_account_meta(false)]
     }
 }
 
 impl<'info> ToAccountInfos<'info> for MintTo<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.mint.clone(), self.to.clone(), self.authority.clone()]
+        vec![self.mint, self.to, self.authority]
     }
 }
 
-pub fn mint_to<'info>(ctx: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, amount: u64) -> Result<()> {
+pub fn mint_to<'info>(_: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, _: u64) -> Result<()> {
     Ok(())
 }
 
 #[derive(Clone)]
+#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Token;
 
 

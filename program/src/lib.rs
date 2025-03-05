@@ -1,3 +1,5 @@
+#![feature(type_name_of_val)]
+
 pub mod account_info;
 pub mod borsh;
 pub mod clock;
@@ -54,6 +56,14 @@ pub mod verify {
     };
 
     pub use super::borsh0_10;
+}
+
+
+pub mod log {
+
+    pub fn sol_log_compute_units() {
+        // nop
+    }
 }
 
 #[macro_export]

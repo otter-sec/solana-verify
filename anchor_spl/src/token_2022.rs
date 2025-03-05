@@ -27,9 +27,9 @@ impl ToAccountMetas for Transfer<'_> {
 impl<'info> ToAccountInfos<'info> for Transfer<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
         vec![
-            self.from.clone(),
-            self.to.clone(),
-            self.authority.clone(),
+            self.from,
+            self.to,
+            self.authority,
         ]
     }
 }
@@ -58,10 +58,10 @@ impl ToAccountMetas for TransferChecked<'_> {
 impl<'info> ToAccountInfos<'info> for TransferChecked<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
         vec![
-            self.from.clone(),
-            self.to.clone(),
-            self.mint.clone(),
-            self.authority.clone(),
+            self.from,
+            self.to,
+            self.mint,
+            self.authority,
         ]
     }
 }

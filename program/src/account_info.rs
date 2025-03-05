@@ -3,7 +3,8 @@ use std::cell::{BorrowError, BorrowMutError};
 use super::pubkey::Pubkey;
 use crate::instruction::AccountMeta;
 use crate::stupid_refcell::{StupidRef, StupidRefCell, StupidRefMut};
-use crate::{pubkey::KEYS, vec::sparse::Vec, Key, Result};
+pub use crate::Key;
+use crate::{pubkey::KEYS, vec::sparse::Vec, Result};
 
 #[cfg(not(feature = "verify"))]
 use crate::error::Error;
@@ -157,5 +158,26 @@ impl Default for AccountInfo<'_> {
             executable: bool::default(),
             rent_epoch: bool::default(),
         }
+    }
+}
+
+// Ugly hack to allow kani to generate &AccountInfo
+#[cfg(any(kani, feature = "kani"))]
+impl<'info> kani::Arbitrary for &'info AccountInfo<'info> {
+    fn any() -> Self {
+        // Create the actual AccountInfo
+        let account = AccountInfo {
+            key: kani_new_pubkey(),
+            is_signer: kani::any(),
+            is_writable: kani::any(),
+            lamports: kani::any(),
+            data: kani::any(),
+            owner: kani_new_pubkey(),
+            executable: kani::any(),
+            rent_epoch: kani::any(),
+        };
+
+        // Leak the account to extend its lifetime
+        Box::leak(Box::new(account))
     }
 }

@@ -4,8 +4,9 @@ use std::{
 };
 
 use otter_solana_program::{
-    account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, Key, Result,
+    account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, Result,
 };
+pub use otter_solana_program::Key;
 
 use crate::{
     prelude::{Account, Program},

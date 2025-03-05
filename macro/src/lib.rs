@@ -79,11 +79,14 @@ pub fn verify(args: TokenStream, item: TokenStream) -> TokenStream {
 
 // used on Account structs we just need to return the input
 #[proc_macro_attribute]
-pub fn zero_copy(_: TokenStream, item: TokenStream) -> TokenStream {
-    item
+pub fn zero_copy(args: TokenStream, item: TokenStream) -> TokenStream {
+    core::account::zero_copy(args.into(), item.into())
+        .unwrap()
+        .into()
 }
 
 #[proc_macro_attribute]
 pub fn stub(attr: TokenStream, item: TokenStream) -> TokenStream {
     core::stub::stub(attr.into(), item.into()).into()
 }
+

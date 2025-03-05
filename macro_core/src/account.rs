@@ -254,12 +254,29 @@ pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let item = syn::parse2::<ItemStruct>(input.clone())?;
     let ident = item.ident;
 
-    let res = quote! {
+    let res = quote! {        
         #[derive(Arbitrary, AnchorDeserialize, AnchorSerialize)]
         #input
 
         impl AccountSerialize for #ident {}
         impl AccountDeserialize for #ident {}
+
+        impl anchor_lang::Discriminator for #ident {
+            const DISCRIMINATOR: [u8; 8] = *b"00000000";
+        }
+
+        impl anchor_lang::ZeroCopy for #ident {}
+        
+        impl anchor_lang::Owner for #ident {
+            fn owner() -> anchor_lang::prelude::Pubkey {
+                anchor_lang::prelude::Pubkey::new_from_array([10; 1])
+            }
+        }
     };
     Ok(res)
+}
+
+
+pub fn zero_copy(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+    account(args, input)
 }

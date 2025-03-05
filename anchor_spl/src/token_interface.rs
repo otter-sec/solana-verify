@@ -1,10 +1,11 @@
 use onchor::prelude::*;
 
+use crate::spl_token_2022;
 pub use crate::token_2022::{TransferChecked, transfer, transfer_checked, Transfer};
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
-pub struct Mint;
+pub struct Mint(spl_token_2022::state::Mint);
 
 impl AccountDeserialize for Mint {}
 

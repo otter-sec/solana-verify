@@ -15,7 +15,7 @@ pub mod rent {
 
 
 pub mod instructions {
-    use crate::pubkey::Pubkey;
+    use crate::{account_info::AccountInfo, instruction::Instruction, program_error::ProgramError, pubkey::Pubkey};
 
     pub struct Instructions;
 
@@ -23,6 +23,20 @@ pub mod instructions {
         pub fn id() -> Pubkey {
             Pubkey { t: [44] }
         }
+    }
+
+    // Note: Fix this later as needed
+    pub fn load_current_index_checked(
+        _: &AccountInfo,
+    ) -> Result<u16, ProgramError> {
+        Ok(0)
+    }
+
+    pub fn load_instruction_at_checked(
+        _: usize,
+        _: &AccountInfo,
+    ) -> Result<Instruction, ProgramError> {
+        Ok(Instruction::default())
     }
 }
 

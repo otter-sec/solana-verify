@@ -14,10 +14,13 @@ pub struct AccountLoader<'info, T: Owner> {
 
 impl<'info, T: Owner> AccountLoader<'info, T> {
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
-        Self { acc_info, phantom: PhantomData }
+        Self {
+            acc_info,
+            phantom: PhantomData,
+        }
     }
 
-     #[inline(never)]
+    #[inline(never)]
     pub fn try_from(acc_info: &'info AccountInfo<'info>) -> Result<AccountLoader<'info, T>> {
         if acc_info.owner != &T::owner() {
             return Err(Error::Generic);
@@ -53,7 +56,6 @@ impl<'info, T: Owner> kani::Arbitrary for AccountLoader<'info, T> {
     }
 }
 
-
 #[cfg(any(kani, feature = "kani"))]
 impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
     #[inline(never)]
@@ -65,8 +67,12 @@ impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
     pub fn load_mut(&self) -> Result<T> {
         Ok(T::any())
     }
-}
 
+    #[inline(never)]
+    pub fn load_init(&self) -> Result<T> {
+        Ok(T::any())
+    }
+}
 
 impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
     fn to_account_info(&self) -> AccountInfo<'info> {

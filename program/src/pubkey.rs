@@ -1,4 +1,7 @@
-use std::{fmt::{self, Display, Formatter}, hash::Hash};
+use std::{
+    fmt::{self, Display, Formatter},
+    hash::Hash,
+};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -21,7 +24,6 @@ pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],
 }
 
-
 impl Display for Pubkey {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{:?}", self.t)
@@ -39,7 +41,7 @@ impl Pubkey {
     pub fn new_from_array<T: AsRef<[u8]>>(arr: T) -> Pubkey {
         let bytes = arr.as_ref();
         let mut pubkey_bytes = [0u8; PUBKEY_BYTES];
-        
+
         let len = bytes.len().min(PUBKEY_BYTES);
         pubkey_bytes[..len].copy_from_slice(&bytes[..len]);
 
@@ -55,14 +57,20 @@ impl Pubkey {
     }
 
     #[cfg(any(kani, feature = "kani"))]
-    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Result<Pubkey, Box<dyn std::error::Error>> {
+    pub fn create_program_address(
+        _seeds: &[&[u8]],
+        _program_id: &Pubkey,
+    ) -> Result<Pubkey, Box<dyn std::error::Error>> {
         Ok(kani::any())
     }
 }
 
 #[cfg(not(any(kani, feature = "kani")))]
 impl Pubkey {
-    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Result<Pubkey, Box<dyn std::error::Error>> {
+    pub fn create_program_address(
+        _seeds: &[&[u8]],
+        _program_id: &Pubkey,
+    ) -> Result<Pubkey, Box<dyn std::error::Error>> {
         Ok(Pubkey::default())
     }
 }
@@ -85,6 +93,12 @@ impl Pubkey {
 impl AsRef<[u8]> for Pubkey {
     fn as_ref(&self) -> &[u8] {
         &self.t
+    }
+}
+
+impl From<[u8; 32]> for Pubkey {
+    fn from(bytes: [u8; 32]) -> Self {
+        Pubkey { t: [bytes[0]] }
     }
 }
 

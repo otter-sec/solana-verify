@@ -1,7 +1,7 @@
-use onchor::prelude::*;
-
 use crate::spl_token_2022;
-pub use crate::token_2022::{TransferChecked, transfer, transfer_checked, Transfer};
+pub use crate::token_2022::{transfer, transfer_checked, Transfer, TransferChecked};
+use onchor::prelude::*;
+use std::ops::Deref;
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
@@ -10,6 +10,14 @@ pub struct Mint(spl_token_2022::state::Mint);
 impl AccountDeserialize for Mint {}
 
 impl AccountSerialize for Mint {}
+
+impl Deref for Mint {
+    type Target = spl_token_2022::state::Mint;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
@@ -26,8 +34,6 @@ pub struct TokenInterface;
 impl AccountDeserialize for TokenInterface {}
 
 impl AccountSerialize for TokenInterface {}
-
-
 
 pub mod accessor {
     use super::*;

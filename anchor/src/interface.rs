@@ -3,10 +3,10 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+pub use otter_solana_program::Key;
 use otter_solana_program::{
     account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, Result,
 };
-pub use otter_solana_program::Key;
 
 use crate::{
     prelude::{Account, Program},
@@ -24,6 +24,10 @@ impl<'a, T> Interface<'a, T> {
 
     pub fn programdata_address(&self) -> Result<Option<Pubkey>> {
         self.0.programdata_address()
+    }
+
+    pub fn key(&self) -> Pubkey {
+        self.0.key()
     }
 }
 

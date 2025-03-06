@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Deref};
 
 use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey, vec::fast::Vec};
 
@@ -6,7 +6,11 @@ use crate::{ToAccountInfos, ToAccountMetas};
 
 // Lightweight "btreemap" for bumps
 #[derive(Clone, Debug)]
-pub struct FakeBumps;
+pub struct FakeBumps {
+    pub lending_market_authority: u8,
+    pub referrer_toke_state: u8,
+    pub user_metadata: u8,
+}
 
 impl FakeBumps {
     pub fn get(&self, _: &str) -> u8 {
@@ -34,7 +38,11 @@ impl<'info, T> ConcreteContext<'_, '_, '_, 'info, T> {
             program_id: &self.program_id,
             accounts: unsafe { (&self.accounts as *const T as *mut T).as_mut().unwrap() },
             remaining_accounts: &self.remaining_accounts,
-            bumps: FakeBumps {},
+            bumps: FakeBumps {
+                lending_market_authority: 0,
+                referrer_toke_state: 0,
+                user_metadata: 0,
+            },
         }
     }
 }

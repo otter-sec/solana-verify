@@ -24,7 +24,7 @@ pub fn pubkey(id_tokens: TokenStream) -> TokenStream {
         .expect("pubkey should have a string argument")
         .value();
     let first_char = account_id_str.as_bytes()[0];
-    
+
     // return pubkey with first char
     quote! {
         Pubkey { t: [#first_char] }
@@ -241,6 +241,9 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
     let res = quote! {
+
+        impl #generics anchor_lang::Bumps for #ident #generics {}
+
         #arbitrary_impl
         #pre_invariant_impl
         #post_invariant_impl
@@ -254,7 +257,7 @@ pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let item = syn::parse2::<ItemStruct>(input.clone())?;
     let ident = item.ident;
 
-    let res = quote! {        
+    let res = quote! {
         #[derive(Arbitrary, AnchorDeserialize, AnchorSerialize)]
         #input
 
@@ -266,7 +269,7 @@ pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
         }
 
         impl anchor_lang::ZeroCopy for #ident {}
-        
+
         impl anchor_lang::Owner for #ident {
             fn owner() -> anchor_lang::prelude::Pubkey {
                 anchor_lang::prelude::Pubkey::new_from_array([10; 1])
@@ -275,7 +278,6 @@ pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     };
     Ok(res)
 }
-
 
 pub fn zero_copy(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     account(args, input)

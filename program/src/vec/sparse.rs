@@ -170,6 +170,12 @@ impl<T> SparseSlice<T> {
     }
 }
 
+impl<T> AsRef<[T]> for SparseSlice<T> {
+    fn as_ref(&self) -> &[T] {
+        &[]
+    }
+}
+
 impl<T> Index<Range<usize>> for SparseSlice<T> {
     type Output = [T];
 

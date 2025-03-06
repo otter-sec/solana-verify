@@ -268,6 +268,12 @@ impl<'info> ToAccountInfo<'info> for AccountInfo<'info> {
     }
 }
 
+impl<'a> ToAccountInfo<'a> for &'a AccountInfo<'a> {
+    fn to_account_info(&self) -> AccountInfo<'a> {
+        **self
+    }
+}
+
 // impl<'info, T> ToAccountInfo<'info> for T
 // where
 //     T: AsRef<AccountInfo<'info>>,

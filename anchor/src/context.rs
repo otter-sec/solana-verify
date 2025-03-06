@@ -8,13 +8,34 @@ use crate::{ToAccountInfos, ToAccountMetas};
 #[derive(Clone, Debug)]
 pub struct FakeBumps {
     pub lending_market_authority: u8,
-    pub referrer_toke_state: u8,
+    pub referrer_token_state: u8,
     pub user_metadata: u8,
 }
 
 impl FakeBumps {
     pub fn get(&self, _: &str) -> u8 {
         0u8
+    }
+}
+
+#[cfg(any(kani, feature = "kani"))]
+impl kani::Arbitrary for FakeBumps {
+    fn any() -> Self {
+        Self {
+            lending_market_authority: kani::any(),
+            referrer_token_state: kani::any(),
+            user_metadata: kani::any(),
+        }
+    }
+}
+
+impl FakeBumps {
+    pub fn new() -> Self {
+        Self {
+            lending_market_authority: 0,
+            referrer_token_state: 0,
+            user_metadata: 0,
+        }
     }
 }
 
@@ -38,11 +59,7 @@ impl<'info, T> ConcreteContext<'_, '_, '_, 'info, T> {
             program_id: &self.program_id,
             accounts: unsafe { (&self.accounts as *const T as *mut T).as_mut().unwrap() },
             remaining_accounts: &self.remaining_accounts,
-            bumps: FakeBumps {
-                lending_market_authority: 0,
-                referrer_toke_state: 0,
-                user_metadata: 0,
-            },
+            bumps: FakeBumps::new(),
         }
     }
 }

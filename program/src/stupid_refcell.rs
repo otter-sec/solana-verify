@@ -85,7 +85,7 @@ impl<T> StupidRefMut<'_, T> {
 
 #[allow(invalid_reference_casting)]
 impl<T> StupidRef<'_, T> {
-    fn new(x: &T) -> Self {
+    pub fn new(x: &T) -> Self {
         Self {
             x: unsafe { &mut *(x as *const T as *mut T) },
         }
@@ -122,4 +122,3 @@ impl<'a, T> Deref for StupidRef<'a, T> {
         &self.x
     }
 }
-

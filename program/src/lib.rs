@@ -6,10 +6,11 @@ pub mod clock;
 pub mod collections {
     pub mod hashmap;
 }
-pub mod decode_error;
 pub mod borsh0_10;
+pub mod decode_error;
 pub mod entrypoint;
 pub mod error;
+pub mod hash;
 pub mod incinerator;
 pub mod instruction;
 pub mod native_token;
@@ -20,7 +21,6 @@ pub mod program_option;
 pub mod program_pack;
 pub mod pubkey;
 pub mod rent;
-pub mod hash;
 pub mod string;
 pub mod stupid_refcell;
 pub mod system_instruction;
@@ -52,12 +52,11 @@ pub mod verify {
     pub use super::vec::fast::Vec;
 
     pub use otter_solana_macro::{
-        account, error_code, invariant, verify, verify_unpackable, Accounts, address_lookup_table
+        account, address_lookup_table, error_code, invariant, verify, verify_unpackable, Accounts,
     };
 
     pub use super::borsh0_10;
 }
-
 
 pub mod log {
 
@@ -65,6 +64,9 @@ pub mod log {
         // nop
     }
 }
+pub use stupid_refcell::StupidRef as Ref;
+pub use stupid_refcell::StupidRefCell as RefCell;
+pub use stupid_refcell::StupidRefMut as RefMut;
 
 #[macro_export]
 macro_rules! msg {

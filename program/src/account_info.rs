@@ -1,6 +1,7 @@
 use std::cell::{BorrowError, BorrowMutError};
 
 use super::pubkey::Pubkey;
+use crate::error::ProgramError;
 use crate::instruction::AccountMeta;
 use crate::stupid_refcell::{StupidRef, StupidRefCell, StupidRefMut};
 pub use crate::Key;
@@ -61,7 +62,6 @@ impl<'a> AccountInfo<'a> {
         Ok(self.data.borrow().is_empty())
     }
 
-
     pub fn try_borrow_data(&self) -> Result<&[u8]> {
         Ok(&self.data)
     }
@@ -69,8 +69,6 @@ impl<'a> AccountInfo<'a> {
     pub fn try_borrow_mut_data(&self) -> Result<&[u8]> {
         self.try_borrow_data()
     }
-
-    
 
     pub fn try_borrow_mut_lamports(
         &mut self,

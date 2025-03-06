@@ -21,11 +21,19 @@ impl Deref for Mint {
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
-pub struct TokenAccount;
+pub struct TokenAccount(spl_token_2022::state::Account);
 
 impl AccountDeserialize for TokenAccount {}
 
 impl AccountSerialize for TokenAccount {}
+
+impl Deref for TokenAccount {
+    type Target = spl_token_2022::state::Account;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]

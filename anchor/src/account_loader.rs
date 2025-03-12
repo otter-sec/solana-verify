@@ -65,6 +65,11 @@ impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
     pub fn load_mut(&self) -> Result<T> {
         Ok(T::any())
     }
+
+    #[inline(never)]
+    pub fn load_init(&self) -> Result<T> {
+        Ok(T::any())
+    }
 }
 
 

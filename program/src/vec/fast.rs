@@ -33,6 +33,14 @@ impl<T: Default> Default for Vec<T> {
         }
     }
 }
+impl <T: Default> Vec<T> {
+    pub fn append(&mut self, other: &mut Self) {
+        for a in &mut other[..] {
+            self.push(std::mem::take(a));
+        }
+    }
+}
+
 
 impl<T> Vec<T> {
     pub fn new() -> Vec<T>
@@ -52,6 +60,12 @@ impl<T> Vec<T> {
     pub fn push(&mut self, t: T) {
         self.data[self.size] = t;
         self.size += 1;
+    }
+
+    pub fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for x in iter.into_iter() {
+            self.push(x);
+        }
     }
 
     pub fn insert(&mut self, pos: usize, t: T) {

@@ -4,7 +4,7 @@ use crate::context::CpiContext;
 use crate::prelude::Result;
 use otter_solana_program::account_info::AccountInfo;
 use otter_solana_program::instruction::AccountMeta;
-use otter_solana_program::{pubkey::Pubkey, declare_id};
+use otter_solana_program::{pubkey::Pubkey, declare_id, vec::fast::Vec};
 
 #[derive(Clone, Default)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
@@ -33,13 +33,13 @@ impl ToAccountMetas for Transfer<'_> {
         let is_signer = is_signer.unwrap_or(self.from.is_signer);
         let from = self.from.to_account_meta(is_signer);
         let to = self.to.to_account_meta(false);
-        vec![from, to]
+        vec![from, to].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for Transfer<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.from, self.to]
+        vec![self.from, self.to].into()
     }
 }
 
@@ -65,13 +65,13 @@ impl ToAccountMetas for CreateAccount<'_> {
         let is_signer = is_signer.unwrap_or(self.from.is_signer);
         let from = self.from.to_account_meta(is_signer);
         let to = self.to.to_account_meta(false);
-        vec![from, to]
+        vec![from, to].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for CreateAccount<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.from, self.to]
+        vec![self.from, self.to].into()
     }
 }
 
@@ -94,13 +94,13 @@ impl<'info> ToAccountMetas for Allocate<'info> {
     fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.account_to_allocate.is_signer);
         let meta = self.account_to_allocate.to_account_meta(is_signer);
-        vec![meta]
+        vec![meta].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for Allocate<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.account_to_allocate]
+        vec![self.account_to_allocate].into()
     }
 }
 
@@ -121,13 +121,13 @@ impl<'info> ToAccountMetas for Assign<'info> {
     fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
         let is_signer = is_signer.unwrap_or(self.account_to_assign.is_signer);
         let meta = self.account_to_assign.to_account_meta(is_signer);
-        vec![meta]
+        vec![meta].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for Assign<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.account_to_assign]
+        vec![self.account_to_assign].into()
     }
 }
 

@@ -4,7 +4,7 @@ use std::{
 };
 
 use otter_solana_program::{
-    account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, Result,
+    account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, Result, vec::fast::Vec
 };
 pub use otter_solana_program::Key;
 

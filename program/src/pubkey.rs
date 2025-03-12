@@ -1,6 +1,6 @@
 use std::{fmt::{self, Display, Formatter}, hash::Hash};
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
 
 pub const PUBKEY_BYTES: usize = 1;
 
@@ -16,6 +16,7 @@ pub const PUBKEY_BYTES: usize = 1;
     BorshSerialize,
     BorshDeserialize,
     Hash,
+    BorshSchema
 )]
 pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],

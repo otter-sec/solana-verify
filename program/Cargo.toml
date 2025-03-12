@@ -11,6 +11,7 @@ kani = { workspace = true, optional = true }
 num-traits = { workspace = true }
 otter-solana-macro = { path = "../macro" }
 thiserror = { workspace = true }
+solana-keccak-hasher = "=2.2.1"
 
 [features]
 kani = ["dep:kani"]

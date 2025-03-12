@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use crate::{prelude::AnchorDeserialize, ToAccountInfos, ToAccountMetas};
 use crate::{Owner, ToAccountInfo};
 use otter_solana_program::{
-    account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result,
+    account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result, vec::fast::Vec
 };
 
 #[derive(Debug, Clone)]
@@ -67,7 +67,7 @@ impl<'info, T> ToAccountMetas for Account<'info, T> {
             false => AccountMeta::new_readonly(*self.info.key, is_signer),
             true => AccountMeta::new(*self.info.key, is_signer),
         };
-        vec![meta]
+        vec![meta].into()
     }
 }
 
@@ -79,7 +79,7 @@ impl<'info, T> ToAccountInfo<'info> for Account<'info, T> {
 
 impl<'info, T> ToAccountInfos<'info> for Account<'info, T> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.info]
+        vec![self.info].into()
     }
 }
 
@@ -122,5 +122,22 @@ where
 
     fn try_from(info: &AccountInfo<'info>) -> Result<Self> {
         Self::try_from(info)
+    }
+}
+
+impl ToAccountMetas for AccountInfo<'_> {
+    fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta> {
+        let is_signer = is_signer.unwrap_or(self.is_signer);
+        let meta = match self.is_writable {
+            false => AccountMeta::new_readonly(*self.key, is_signer),
+            true => AccountMeta::new(*self.key, is_signer),
+        };
+        vec![meta].into()
+    }
+}
+
+impl<'info> ToAccountInfos<'info> for AccountInfo<'info> {
+    fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
+        vec![self.clone()].into()
     }
 }

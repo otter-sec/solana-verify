@@ -1,7 +1,7 @@
 use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty};
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, format_ident};
 use syn::{ExprType, ItemStruct, LitStr};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
@@ -226,6 +226,20 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         })
         .collect::<Vec<TokenStream>>();
 
+    let bumps_fields = val
+        .fields
+        .iter()
+        .map(|field| {
+            let (boxed, ident) = match field {
+                AccountField::Field(field) => (is_field_boxed(field), &field.ident),
+                AccountField::CompositeField(c_field) => (false, &c_field.ident),
+            };
+            quote! {
+                #ident: u8
+            }
+        })
+        .collect::<Vec<TokenStream>>();
+
     let arbitrary_impl = quote! {
         impl #generics kani::Arbitrary for #ident #generics {
             fn any() -> Self {
@@ -236,11 +250,26 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         }
     };
 
+    let bumps_struct_ident = format_ident!("{}Bumps", ident);
+
+    let bumps_impl = quote! {
+        #[derive(Default)]
+        struct #bumps_struct_ident {
+            #(#bumps_fields),*
+        }
+
+        impl Bumps for #ident {
+            type Bumps = #bumps_struct_ident;
+        }
+    };
+    println!("{}", bumps_impl);
+
     let pre_invariant_impl = create_pre_invariants(&val);
     let post_invariant_impl = create_post_invariants(&val);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
     let res = quote! {
+        #bumps_impl
         #arbitrary_impl
         #pre_invariant_impl
         #post_invariant_impl

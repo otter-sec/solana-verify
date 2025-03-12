@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 kani = { workspace = true, optional = true }
 onchor = { path = "../anchor" }
+borsh = { workspace = true }
 
 [features]
 default = []

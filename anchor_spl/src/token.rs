@@ -1,12 +1,15 @@
-use onchor::prelude::AccountMeta;
+use onchor::prelude::{AccountMeta, Vec, account, invariant};
 use onchor::solana_program::account_info::AccountInfo;
 
 use onchor::solana_program::pubkey::Pubkey;
-use onchor::system_program::Transfer;
+pub use onchor::system_program::Transfer;
 use onchor::context::CpiContext;
-use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas};
+use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas, AccountDeserialize, AccountSerialize, AnchorSerialize, AnchorDeserialize};
 
 use crate::token_2022::TransferChecked;
+
+use {kani, kani::Arbitrary};
+use onchor as anchor_lang;
 
 solana_program::declare_id!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
@@ -37,13 +40,13 @@ pub struct Burn<'info> {
 
 impl ToAccountMetas for Burn<'_> {
     fn to_account_metas(&self, _: Option<bool>) -> Vec<AccountMeta> {
-        vec![self.mint.to_account_meta(false), self.from.to_account_meta(false), self.authority.to_account_meta(false)]
+        vec![self.mint.to_account_meta(false), self.from.to_account_meta(false), self.authority.to_account_meta(false)].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for Burn<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.mint, self.from, self.authority]
+        vec![self.mint, self.from, self.authority].into()
     }
 }
 
@@ -61,13 +64,13 @@ pub struct MintTo<'info> {
 
 impl ToAccountMetas for MintTo<'_> {
     fn to_account_metas(&self, _: Option<bool>) -> Vec<AccountMeta> {
-        vec![self.mint.to_account_meta(false), self.to.to_account_meta(false), self.authority.to_account_meta(false)]
+        vec![self.mint.to_account_meta(false), self.to.to_account_meta(false), self.authority.to_account_meta(false)].into()
     }
 }
 
 impl<'info> ToAccountInfos<'info> for MintTo<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
-        vec![self.mint, self.to, self.authority]
+        vec![self.mint, self.to, self.authority].into()
     }
 }
 
@@ -78,6 +81,16 @@ pub fn mint_to<'info>(_: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, _: u64) -
 #[derive(Clone)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Token;
+
+#[derive(Clone, Debug, Default, PartialEq)]
+#[account]
+#[invariant()]
+pub struct Mint;
+
+#[derive(Clone, Debug, Default, PartialEq)]
+#[account]
+#[invariant()]
+pub struct TokenAccount;
 
 
 pub mod accessor {

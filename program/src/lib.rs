@@ -39,6 +39,7 @@ pub trait Key {
 }
 
 pub use otter_solana_macro::{declare_id, pubkey};
+pub use solana_keccak_hasher as keccak;
 
 #[cfg(feature = "verify")]
 pub mod verify {

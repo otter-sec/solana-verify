@@ -45,7 +45,7 @@ pub trait Discriminator {
 pub trait Bump {
     fn seed(&self) -> u8;
 }
-
+pub use ::borsh::{BorshDeserialize as AnchorDeserialize, BorshSerialize as AnchorSerialize};
 
 // Roughly following anchor-lang
 // see: https://github.com/coral-xyz/anchor/blob/master/lang/src/lib.rs#L235-L266
@@ -110,14 +110,14 @@ pub mod prelude {
 #[macro_export]
 macro_rules! err {
     ($v:expr) => {
-        Err(solana_program::error::Error::Generic)
+        Err(anchor_lang::solana_program::error::Error::Generic)
     };
 }
 
 #[macro_export]
 macro_rules! error {
     ($error:expr) => {
-        solana_program::error::Error::Generic
+        anchor_lang::solana_program::error::Error::Generic
     };
 }
 
@@ -345,11 +345,11 @@ pub trait Arbitrary {
 }
 
 pub trait ToAccountInfos<'info> {
-    fn to_account_infos(&self) -> Vec<AccountInfo<'info>>;
+    fn to_account_infos(&self) -> solana_program::vec::fast::Vec<AccountInfo<'info>>;
 }
 
 pub trait ToAccountMetas {
-    fn to_account_metas(&self, is_signer: Option<bool>) -> Vec<AccountMeta>;
+    fn to_account_metas(&self, is_signer: Option<bool>) -> solana_program::vec::fast::Vec<AccountMeta>;
 }
 
 pub trait Id {

@@ -1,9 +1,10 @@
 use onchor::{
-    prelude::{AccountInfo, AccountMeta, CpiContext},
+    prelude::{AccountInfo, AccountMeta, CpiContext, Vec},
     ToAccountInfos, ToAccountMetas,
 };
 
 use crate::Result;
+pub use crate::spl_token_2022;
 
 #[derive(Debug)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
@@ -19,7 +20,7 @@ impl ToAccountMetas for Transfer<'_> {
         let from = self.from.to_account_meta(is_signer);
         let to = self.to.to_account_meta(false);
         let authority = self.authority.to_account_meta(false);
-        vec![from, to, authority]
+        vec![from, to, authority].into()
     }
 }
 
@@ -30,7 +31,7 @@ impl<'info> ToAccountInfos<'info> for Transfer<'info> {
             self.from,
             self.to,
             self.authority,
-        ]
+        ].into()
     }
 }
 
@@ -51,7 +52,7 @@ impl ToAccountMetas for TransferChecked<'_> {
         let to = self.to.to_account_meta(false);
         let mint = self.mint.to_account_meta(false);
         let authority = self.authority.to_account_meta(false);
-        vec![from, to, mint, authority]
+        vec![from, to, mint, authority].into()
     }
 }
 
@@ -62,7 +63,7 @@ impl<'info> ToAccountInfos<'info> for TransferChecked<'info> {
             self.to,
             self.mint,
             self.authority,
-        ]
+        ].into()
     }
 }
 

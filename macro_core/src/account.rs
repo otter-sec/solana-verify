@@ -90,8 +90,8 @@ fn create_constraints_checks(
     if checks.is_empty() {
         quote! {
             impl #generics #ident #generics {
-                pub fn __check_constraints(&self, #(#arg_names: #arg_types),*) -> bool {
-                    true
+                pub fn __check_constraints(&self, #(#arg_names: #arg_types),*) -> solana_program::Result<bool>  {
+                    Ok(true)
                 }
             }
         }
@@ -99,9 +99,9 @@ fn create_constraints_checks(
         quote! {
             #[allow(unused_variables)]
             impl #generics #ident #generics {
-                pub fn __check_constraints(&self, #(#arg_names: #arg_types),*) -> bool {
+                pub fn __check_constraints(&self, #(#arg_names: #arg_types),*) -> solana_program::Result<bool> {
                     #(let #fields = &self.#fields;)*
-                    #(#checks)&&*
+                    Ok(#(#checks)&&*)
                 }
             }
         }
@@ -306,8 +306,18 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
         }
     } else {
         quote! {
-            impl AccountSerialize for #ident {}
-            impl AccountDeserialize for #ident {}
+            impl AccountSerialize for #ident {
+                fn try_serialize<W: std::io::Write>(&self, writer: &mut W) -> solana_program::Result<()> {
+                    self.serialize(writer)
+                        .map_err(|_| anchor_lang::Error::AccountDidNotSerialize)
+                }
+            }
+
+            impl AccountDeserialize for #ident {
+                fn try_deserialize_unchecked(buf: &mut &[u8]) -> solana_program::Result<Self> {
+                    Self::deserialize(buf).map_err(|_| anchor_lang::Error::AccountDidNotDeserialize)
+                }
+            }
         }
     };
 

@@ -36,7 +36,7 @@ fn get_ctx_type(ctx_param: &PatType) -> syn::Result<Punctuated<GenericArgument, 
 fn create_constraint_check(has_constraint: bool, parameters: &[&PatType]) -> TokenStream {
     if !has_constraint {
         quote! {
-            let constraints = true;
+            let constraints = Ok(true);
         }
     } else {
         let constraint_params = parameters
@@ -79,7 +79,7 @@ fn create_succeeds_if(
             let precondition = #precondition;
             kani::assume(precondition);
             #constraint_check
-            let result = if constraints {
+            let result = if constraints == Ok(true) {
                 #mod_name::#function_name(#(#parameter_names),*)
             } else {
                 err!("constraint check failed")

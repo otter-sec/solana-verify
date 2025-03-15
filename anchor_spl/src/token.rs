@@ -7,6 +7,9 @@ use onchor::context::CpiContext;
 use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas, AccountDeserialize, AccountSerialize, AnchorSerialize, AnchorDeserialize};
 
 use crate::token_2022::TransferChecked;
+use crate::spl_token;
+
+use std::ops::Deref;
 
 use {kani, kani::Arbitrary};
 use onchor as anchor_lang;
@@ -78,20 +81,49 @@ pub fn mint_to<'info>(_: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, _: u64) -
     Ok(())
 }
 
+// TokenAccount
+
+#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[account]
+#[invariant()]
+pub struct TokenAccount(spl_token::state::Account);
+
+impl TokenAccount {
+    pub const LEN: usize = spl_token::state::Account::LEN;
+}
+
+impl Deref for TokenAccount {
+    type Target = spl_token::state::Account;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// Mint
+
+#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[account]
+#[invariant()]
+pub struct Mint(spl_token::state::Mint);
+
+impl Mint {
+    pub const LEN: usize = spl_token::state::Mint::LEN;
+}
+
+impl Deref for Mint {
+    type Target = spl_token::state::Mint;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// Token
+
 #[derive(Clone)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
-pub struct Token;
-
-#[derive(Clone, Debug, Default, PartialEq)]
-#[account]
-#[invariant()]
-pub struct Mint;
-
-#[derive(Clone, Debug, Default, PartialEq)]
-#[account]
-#[invariant()]
-pub struct TokenAccount;
-
+pub struct Token();
 
 pub mod accessor {
     use super::*;

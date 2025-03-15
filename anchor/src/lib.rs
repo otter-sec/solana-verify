@@ -44,7 +44,7 @@ pub trait Discriminator {
 //     fn seed(&self) -> u8;
 // }
 pub use context::{Bumps};
-pub use otter_solana_macro::{error_code};
+pub use otter_solana_macro::{error_code, declare_id};
 
 pub use ::borsh::{BorshDeserialize as AnchorDeserialize, BorshSerialize as AnchorSerialize};
 
@@ -278,32 +278,22 @@ impl<'info> ToAccountInfo<'info> for AccountInfo<'info> {
 //     }
 // }
 
-pub trait AccountSerialize: crate::prelude::AnchorSerialize {
-    /// Serializes the account data into `writer`.
-    fn try_serialize<W: Write>(&self, writer: &mut W) -> otter_solana_program::Result<()> {
-        self.serialize(writer)
-            .map_err(|_| crate::prelude::Error::AccountDidNotSerialize)
+
+pub trait AccountSerialize {
+    fn try_serialize<W: Write>(&self, _writer: &mut W) -> Result<()> {
+        Ok(())
     }
 }
 
-pub trait AccountDeserialize: crate::prelude::AnchorDeserialize {
-    /// Deserializes previously initialized account data. Should fail for all
-    /// uninitialized accounts, where the bytes are zeroed. Implementations
-    /// should be unique to a particular account type so that one can never
-    /// successfully deserialize the data of one account type into another.
-    /// For example, if the SPL token program were to implement this trait,
-    /// it should be impossible to deserialize a `Mint` account into a token
-    /// `Account`.
-    fn try_deserialize(buf: &mut &[u8]) -> otter_solana_program::Result<Self> {
+pub trait AccountDeserialize: Sized {
+    fn try_deserialize(buf: &mut &[u8]) -> Result<Self> {
         Self::try_deserialize_unchecked(buf)
     }
 
     /// Deserializes account data without checking the account discriminator.
     /// This should only be used on account initialization, when the bytes of
     /// the account are zeroed.
-    fn try_deserialize_unchecked(buf: &mut &[u8]) -> otter_solana_program::Result<Self> {
-        Self::deserialize(buf).map_err(|_| crate::prelude::Error::AccountDidNotDeserialize)
-    }
+    fn try_deserialize_unchecked(buf: &mut &[u8]) -> Result<Self>;
 }
 
 pub trait Accounts<'info>: ToAccountMetas + ToAccountInfos<'info> + Sized {

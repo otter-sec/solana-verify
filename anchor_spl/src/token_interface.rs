@@ -1,32 +1,39 @@
 use onchor::prelude::*;
+use onchor as anchor_lang;
 
 pub use crate::spl_token_2022;
 pub use crate::token_2022::{TransferChecked, transfer, transfer_checked, Transfer};
 
-#[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
-#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq)]
+#[repr(transparent)]
+#[account]
 pub struct Mint(spl_token_2022::state::Mint);
 
-impl AccountDeserialize for Mint {}
+impl Deref for Mint {
+    type Target = spl_token_2022::state::Mint;
 
-impl AccountSerialize for Mint {}
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
-#[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
-#[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
-pub struct TokenAccount;
+#[derive(Clone, Debug, Default, PartialEq)]
+#[repr(transparent)]
+#[account]
+#[invariant()]
+pub struct TokenAccount(spl_token_2022::state::Account);
 
-impl AccountDeserialize for TokenAccount {}
+impl Deref for TokenAccount {
+    type Target = spl_token_2022::state::Account;
 
-impl AccountSerialize for TokenAccount {}
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct TokenInterface;
-
-impl AccountDeserialize for TokenInterface {}
-
-impl AccountSerialize for TokenInterface {}
-
 
 
 pub mod accessor {

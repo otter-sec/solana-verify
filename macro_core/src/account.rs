@@ -1,8 +1,8 @@
-use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty};
+use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser};
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
 use quote::{quote, ToTokens, format_ident};
-use syn::{ExprType, ItemStruct, LitStr};
+use syn::{ExprType, ItemStruct, LitStr, parse::{ParseStream}};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let account_id_str = syn::parse2::<LitStr>(id_tokens)
@@ -11,7 +11,7 @@ pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let first_char = account_id_str.as_bytes()[0];
     quote! {
         #[doc = "this is an id"]
-        pub static ID: Pubkey = Pubkey { t: [#first_char] };
+        pub static ID: Pubkey = Pubkey { t: [#first_char], _padding: unsafe { std::mem::zeroed() } };
         #[doc = "this is a function which returns an id"]
         pub fn id() -> Pubkey {
             ID
@@ -27,7 +27,7 @@ pub fn pubkey(id_tokens: TokenStream) -> TokenStream {
     
     // return pubkey with first char
     quote! {
-        Pubkey { t: [#first_char] }
+        Pubkey { t: [#first_char], _padding: [0; 31] }
     }
 }
 
@@ -205,6 +205,34 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let ident = val.ident.clone();
     let generics = val.generics.clone();
 
+    let bumps_fields = val
+        .fields
+        .iter()
+        .map(|field| {
+            let (boxed, ident) = match field {
+                AccountField::Field(field) => (is_field_boxed(field), &field.ident),
+                AccountField::CompositeField(c_field) => (false, &c_field.ident),
+            };
+            quote! {
+                #ident: u8
+            }
+        })
+        .collect::<Vec<TokenStream>>();
+
+    let bumps_struct_ident = format_ident!("{}Bumps", ident);
+
+    let bumps_impl = quote! {
+        #[derive(Default, Debug)]
+        struct #bumps_struct_ident {
+            #(#bumps_fields),*
+        }
+
+        impl anchor_lang::Bumps for #ident<'_> {
+            type Bumps = #bumps_struct_ident;
+        }
+    };
+    println!("{}", bumps_impl);
+
     let fields = val
         .fields
         .iter()
@@ -226,19 +254,6 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         })
         .collect::<Vec<TokenStream>>();
 
-    let bumps_fields = val
-        .fields
-        .iter()
-        .map(|field| {
-            let (boxed, ident) = match field {
-                AccountField::Field(field) => (is_field_boxed(field), &field.ident),
-                AccountField::CompositeField(c_field) => (false, &c_field.ident),
-            };
-            quote! {
-                #ident: u8
-            }
-        })
-        .collect::<Vec<TokenStream>>();
 
     let arbitrary_impl = quote! {
         impl #generics kani::Arbitrary for #ident #generics {
@@ -249,20 +264,6 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
             }
         }
     };
-
-    let bumps_struct_ident = format_ident!("{}Bumps", ident);
-
-    let bumps_impl = quote! {
-        #[derive(Default)]
-        struct #bumps_struct_ident {
-            #(#bumps_fields),*
-        }
-
-        impl Bumps for #ident {
-            type Bumps = #bumps_struct_ident;
-        }
-    };
-    println!("{}", bumps_impl);
 
     let pre_invariant_impl = create_pre_invariants(&val);
     let post_invariant_impl = create_post_invariants(&val);
@@ -279,23 +280,48 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     Ok(res)
 }
 
-pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let item = syn::parse2::<ItemStruct>(input.clone())?;
     let ident = item.ident;
 
+    let args_parsed = syn::parse::Parser::parse2(
+        syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
+        args
+    )?;
+
+    let is_zero_copy = args_parsed.iter().any(|x| x.is_ident("zero_copy"));
+
+    let ser_derives = if is_zero_copy {
+        quote! {
+        }
+    } else {
+        quote! {
+            #[derive(AnchorSerialize, AnchorDeserialize)]
+        }
+    };
+
+    let ser_impls = if is_zero_copy {
+        quote! {
+            impl anchor_lang::ZeroCopy for #ident {}
+        }
+    } else {
+        quote! {
+            impl AccountSerialize for #ident {}
+            impl AccountDeserialize for #ident {}
+        }
+    };
+
     let res = quote! {        
-        #[derive(Arbitrary, AnchorDeserialize, AnchorSerialize)]
+        #ser_derives
+        #[derive(Arbitrary)]
         #input
 
-        impl AccountSerialize for #ident {}
-        impl AccountDeserialize for #ident {}
+        #ser_impls
 
         impl anchor_lang::Discriminator for #ident {
             const DISCRIMINATOR: [u8; 8] = *b"00000000";
         }
 
-        impl anchor_lang::ZeroCopy for #ident {}
-        
         impl anchor_lang::Owner for #ident {
             fn owner() -> anchor_lang::prelude::Pubkey {
                 anchor_lang::prelude::Pubkey::new_from_array([10; 1])
@@ -307,5 +333,22 @@ pub fn account(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
 
 
 pub fn zero_copy(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    account(args, input)
+    let s = syn::parse2::<ItemStruct>(input.clone())?;
+    let attr = s
+        .attrs
+        .iter()
+        .find(|attr| anchor_parser::tts_to_string(&attr.path) == "repr");
+
+    let repr = match attr {
+        Some(_) => quote! {},
+        None => quote! { #[repr(C)] },
+    };
+
+    Ok(quote! {
+        #[derive(Copy, Clone)]
+        #repr
+        #[derive(bytemuck::Pod)]
+        #[derive(bytemuck::Zeroable)]
+        #input
+    })
 }

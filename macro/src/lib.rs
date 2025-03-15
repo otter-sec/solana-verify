@@ -23,6 +23,7 @@ pub fn derive_init_space(item: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn account(args: TokenStream, item: TokenStream) -> TokenStream {
+    
     core::account::account(args.into(), item.into())
         .unwrap()
         .into()

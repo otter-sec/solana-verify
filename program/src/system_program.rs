@@ -1,6 +1,6 @@
 use super::pubkey::Pubkey;
 /// The static program ID.
-pub static ID: Pubkey = Pubkey { t: [0x42] };
+pub static ID: Pubkey = Pubkey { t: [0x42], _padding: unsafe { std::mem::zeroed() }};
 
 /// Returns `true` if given pubkey is the program ID.
 pub fn check_id(id: &Pubkey) -> bool {

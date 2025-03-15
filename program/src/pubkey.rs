@@ -1,8 +1,10 @@
 use std::{fmt::{self, Display, Formatter}, hash::Hash};
 
 use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
+use bytemuck;
 
 pub const PUBKEY_BYTES: usize = 1;
+pub const PUBKEY_PAD_BYTES: usize = 32 - PUBKEY_BYTES;
 
 #[derive(
     PartialEq,
@@ -16,10 +18,14 @@ pub const PUBKEY_BYTES: usize = 1;
     BorshSerialize,
     BorshDeserialize,
     Hash,
-    BorshSchema
+    BorshSchema,
+    bytemuck::Zeroable,
+    bytemuck::Pod,
 )]
+#[repr(C)]
 pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],
+    pub _padding: [u8; PUBKEY_PAD_BYTES],
 }
 
 
@@ -34,6 +40,7 @@ impl Pubkey {
         Pubkey {
             t: <[u8; PUBKEY_BYTES]>::try_from(k)
                 .expect("Slice must be the same length as a Pubkey"),
+            _padding: Default::default()
         }
     }
 
@@ -44,7 +51,7 @@ impl Pubkey {
         let len = bytes.len().min(PUBKEY_BYTES);
         pubkey_bytes[..len].copy_from_slice(&bytes[..len]);
 
-        Pubkey { t: pubkey_bytes }
+        Pubkey { t: pubkey_bytes, _padding: Default::default() }
     }
 
     pub fn to_bytes(&self) -> [u8; PUBKEY_BYTES] {
@@ -72,6 +79,7 @@ impl Default for &Pubkey {
     fn default() -> Self {
         &Pubkey {
             t: [0; PUBKEY_BYTES],
+            _padding: [0; PUBKEY_PAD_BYTES]
         }
     }
 }
@@ -92,12 +100,12 @@ impl AsRef<[u8]> for Pubkey {
 #[cfg(any(kani, feature = "kani"))]
 impl kani::Arbitrary for Pubkey {
     fn any() -> Self {
-        Self { t: [kani::any()] }
+        Self { t: [kani::any()], _padding: unsafe { std::mem::zeroed() }}
     }
 }
 
 const MAX_KEYS: usize = 100;
-pub static mut KEYS: [Pubkey; MAX_KEYS] = [Pubkey { t: [0] }; MAX_KEYS];
+pub static mut KEYS: [Pubkey; MAX_KEYS] = [Pubkey { t: [0], _padding: unsafe { std::mem::zeroed() } }; MAX_KEYS];
 pub static mut KEYS_IDX: usize = 0;
 
 #[cfg(any(kani, feature = "kani"))]

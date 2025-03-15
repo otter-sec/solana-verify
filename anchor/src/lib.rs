@@ -31,8 +31,6 @@ pub mod accounts {
     pub use crate::account_loader::{self, AccountLoader};
 }
 
-pub trait Bumps{}
-
 pub trait ZeroCopy : Discriminator {}
 
 pub trait Discriminator {
@@ -42,9 +40,12 @@ pub trait Discriminator {
     }
 }
 
-pub trait Bump {
-    fn seed(&self) -> u8;
-}
+// pub trait Bump {
+//     fn seed(&self) -> u8;
+// }
+pub use context::{Bumps};
+pub use otter_solana_macro::{error_code};
+
 pub use ::borsh::{BorshDeserialize as AnchorDeserialize, BorshSerialize as AnchorSerialize};
 
 // Roughly following anchor-lang

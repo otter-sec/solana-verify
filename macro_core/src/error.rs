@@ -15,7 +15,7 @@ pub fn error_code(_args: TokenStream, item: TokenStream) -> Result<TokenStream> 
     let generics = val.generics;
 
     let res = quote! {
-        #[derive(Debug, thiserror::Error)]
+        #[derive(Debug)]
         #filtered_item
 
         impl #generics std::fmt::Display for #ident #generics {

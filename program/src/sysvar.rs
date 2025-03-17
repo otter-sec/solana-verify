@@ -9,7 +9,7 @@ pub mod rent {
 
     impl Sysvar for Rent {}
     pub fn id() -> Pubkey {
-        Pubkey::new_from_array([43])
+        Pubkey::new_from_array2([43])
     }
 }
 
@@ -21,7 +21,7 @@ pub mod instructions {
 
     impl Instructions {
         pub fn id() -> Pubkey {
-            Pubkey::new_from_array([44])
+            Pubkey::new_from_array2([44])
         }
     }
 

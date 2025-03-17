@@ -10,6 +10,7 @@ kani = { workspace = true, optional = true }
 otter-solana-macro = { path = "../macro", features = ["anchor"] }
 otter-solana-program = { path = "../program" }
 thiserror = { workspace = true }
+bytemuck = { workspace = true }
 
 [features]
 default = []

@@ -48,6 +48,10 @@ pub use otter_solana_macro::{error_code, declare_id};
 
 pub use ::borsh::{BorshDeserialize as AnchorDeserialize, BorshSerialize as AnchorSerialize};
 
+pub mod __private {
+    pub use ::bytemuck;
+}
+
 // Roughly following anchor-lang
 // see: https://github.com/coral-xyz/anchor/blob/master/lang/src/lib.rs#L235-L266
 pub mod prelude {
@@ -82,12 +86,13 @@ pub mod prelude {
     pub use solana_program::account_info::{next_account_info, AccountInfo};
     pub use solana_program::clock::Clock;
     pub use solana_program::collections::hashmap::HashMap;
-    pub use solana_program::error::{Error, ProgramError};
+    pub use solana_program::error::{Error};
+    pub use solana_program::program_error::{ProgramError};
     pub use solana_program::instruction::AccountMeta;
     pub use solana_program::pubkey::Pubkey;
     pub use solana_program::rent::Rent;
     pub use solana_program::string::String;
-    pub use solana_program::vec::fast::Vec;
+    pub use solana_program::vec::fast::Vec as FastVec;
     pub use solana_program::Key;
     pub use solana_program::Result;
     pub use solana_program::{entrypoint, msg};
@@ -111,14 +116,14 @@ pub mod prelude {
 #[macro_export]
 macro_rules! err {
     ($v:expr $(,)?) => {
-        Err(anchor_lang::solana_program::error::Error::Generic)
+        Err(anchor_lang::Error::Generic)
     };
 }
 
 #[macro_export]
 macro_rules! error {
     ($error:expr) => {
-        anchor_lang::solana_program::error::Error::Generic
+        anchor_lang::Error::Generic
     };
 }
 
@@ -132,18 +137,18 @@ macro_rules! msg {
 macro_rules! require {
     ($invariant:expr, $error:tt $(,)?) => {
         if !($invariant) {
-            return Err(Error::Generic);
+            return Err(anchor_lang;:Error::Generic);
         }
     };
     ($invariant:expr, $error:expr $(,)?) => {
         if !($invariant) {
-            return Err(Error::Generic);
+            return Err(anchor_lang::Error::Generic);
         }
     };
     // when no error is provided
     ($invariant:expr $(,)?) => {
         if !($invariant) {
-            return Err(Error::Generic);
+            return Err(anchor_lang::Error::Generic);
         }
     };
 }

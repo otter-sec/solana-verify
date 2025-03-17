@@ -4,7 +4,7 @@ use otter_solana_program::pubkey::Pubkey;
 pub use otter_solana_program::Key;
 use otter_solana_program::{account_info::AccountInfo, error::Error, Result};
 
-use crate::{Owner, ToAccountInfo};
+use crate::{Owner, ToAccountInfo, ToAccountMetas, AccountMeta, ToAccountInfos, prelude::FastVec};
 use core::cell::{Ref, RefMut, RefCell};
 
 #[derive(Clone)]
@@ -90,5 +90,22 @@ impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
             executable: self.acc_info.executable,
             rent_epoch: self.acc_info.rent_epoch,
         }
+    }
+}
+
+impl<'info, T: Owner> ToAccountMetas for AccountLoader<'info, T> {
+    fn to_account_metas(&self, is_signer: Option<bool>) -> FastVec<AccountMeta> {
+        let is_signer = is_signer.unwrap_or(self.acc_info.is_signer);
+        let meta = match self.acc_info.is_writable {
+            false => AccountMeta::new_readonly(*self.acc_info.key, is_signer),
+            true => AccountMeta::new(*self.acc_info.key, is_signer),
+        };
+        vec![meta].into()
+    }
+}
+
+impl<'info, T: Owner> ToAccountInfos<'info> for AccountLoader<'info, T> {
+    fn to_account_infos(&self) -> FastVec<AccountInfo<'info>> {
+        vec![self.acc_info.clone()].into()
     }
 }

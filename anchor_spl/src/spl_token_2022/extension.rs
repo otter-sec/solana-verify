@@ -1,7 +1,7 @@
 use num_enum::{TryFromPrimitive, IntoPrimitive, FromPrimitive};
 use crate::spl_token_2022::state::*;
 use crate::spl_token::state::Multisig;
-use onchor::prelude::{ProgramError, Pubkey, Vec};
+use onchor::prelude::{ProgramError, Pubkey, FastVec};
 use onchor::solana_program::vec::sparse::SparseSlice;
 
 #[repr(u8)]
@@ -137,16 +137,11 @@ impl<'data, S: BaseState + kani::Arbitrary> StateWithExtensions<'data, S> {
     }
 
     pub fn get_extension<V: kani::Arbitrary>(&self) -> Result<&V, ProgramError> {
-        let b: Box<V> = Box::new(kani::any());
-        Ok(unsafe { Box::leak(b) })
+        Ok(Box::leak(Box::new(kani::any())))
     }
 
-    pub fn get_extension_types(&self) -> Result<Vec<ExtensionType>, ProgramError> {
-        let mut v: Vec<ExtensionType> = Vec::new();
-        for _ in 0..=4 {
-            v.push(kani::any());
-        }
-        Ok(v)
+    pub fn get_extension_types(&self) -> Result<FastVec<ExtensionType>, ProgramError> {
+        Ok(kani::any())
     }
 }
 
@@ -256,6 +251,10 @@ pub struct PodU64(pub [u8; 8]);
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, PartialEq, Debug, Default, kani::Arbitrary)]
 pub struct PodU16(pub [u8; 2]);
 
+#[repr(transparent)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, PartialEq, Debug, Default, kani::Arbitrary)]
+pub struct PodBool(pub u8);
+
 impl From<u64> for PodU64 {
     fn from(x: u64) -> PodU64 {
         Self(x.to_le_bytes())
@@ -279,6 +278,19 @@ impl From<PodU64> for u64 {
         u64::from_le_bytes(x.0)
     }
 }
+
+impl From<bool> for PodBool {
+    fn from(b: bool) -> Self {
+        Self(b as u8)
+    }
+}
+
+impl From<PodBool> for bool {
+    fn from(b: PodBool) -> Self {
+        b.0 != 0
+    }
+}
+
 
 pub mod transfer_fee {
     use crate::spl_token_2022::extension::OptionalNonZeroPubkey;
@@ -321,5 +333,92 @@ pub mod transfer_hook {
         pub authority: OptionalNonZeroPubkey,
         /// Program that authorizes the transfer
         pub program_id: OptionalNonZeroPubkey,
+    }
+}
+
+pub mod confidential_transfer {
+    use crate::spl_token_2022::extension::OptionalNonZeroPubkey;
+    use crate::spl_token_2022::extension::PodBool;
+    use crate::spl_token_2022::extension::PodU64;
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable, kani::Arbitrary)]
+    pub struct ConfidentialTransferMint {
+        /// Authority to modify the `ConfidentialTransferMint` configuration and to
+        /// approve new accounts (if `auto_approve_new_accounts` is true)
+        ///
+        /// The legacy Token Multisig account is not supported as the authority
+        pub authority: OptionalNonZeroPubkey,
+
+        /// Indicate if newly configured accounts must be approved by the
+        /// `authority` before they may be used by the user.
+        ///
+        /// * If `true`, no approval is required and new accounts may be used
+        ///   immediately
+        /// * If `false`, the authority must approve newly configured accounts (see
+        ///   `ConfidentialTransferInstruction::ConfigureAccount`)
+        pub auto_approve_new_accounts: PodBool,
+
+        // /// Authority to decode any transfer amount in a confidential transfer.
+        // pub auditor_elgamal_pubkey: OptionalNonZeroElGamalPubkey,
+    }
+
+    // I don't think contracts can really inspect this value, so we just put a placeholder type
+
+    #[derive(Copy, Clone, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable, kani::Arbitrary)]
+    #[repr(C)]
+    pub struct CryptBalance {
+        placeholder: [u8; 1]
+    }
+
+    pub type EncryptedBalance = CryptBalance;
+    pub type DecryptableBalance = CryptBalance;
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable, kani::Arbitrary)]
+    pub struct ConfidentialTransferAccount {
+        /// `true` if this account has been approved for use. All confidential
+        /// transfer operations for the account will fail until approval is
+        /// granted.
+        pub approved: PodBool,
+
+        /// The public key associated with ElGamal encryption
+        // pub elgamal_pubkey: PodElGamalPubkey,
+
+        /// The low 16 bits of the pending balance (encrypted by `elgamal_pubkey`)
+        pub pending_balance_lo: EncryptedBalance,
+
+        /// The high 48 bits of the pending balance (encrypted by `elgamal_pubkey`)
+        pub pending_balance_hi: EncryptedBalance,
+
+        /// The available balance (encrypted by `encryption_pubkey`)
+        pub available_balance: EncryptedBalance,
+
+        /// The decryptable available balance
+        pub decryptable_available_balance: DecryptableBalance,
+
+        /// If `false`, the extended account rejects any incoming confidential
+        /// transfers
+        pub allow_confidential_credits: PodBool,
+
+        /// If `false`, the base account rejects any incoming transfers
+        pub allow_non_confidential_credits: PodBool,
+
+        /// The total number of `Deposit` and `Transfer` instructions that have
+        /// credited `pending_balance`
+        pub pending_balance_credit_counter: PodU64,
+
+        /// The maximum number of `Deposit` and `Transfer` instructions that can
+        /// credit `pending_balance` before the `ApplyPendingBalance`
+        /// instruction is executed
+        pub maximum_pending_balance_credit_counter: PodU64,
+
+        /// The `expected_pending_balance_credit_counter` value that was included in
+        /// the last `ApplyPendingBalance` instruction
+        pub expected_pending_balance_credit_counter: PodU64,
+
+        /// The actual `pending_balance_credit_counter` when the last
+        /// `ApplyPendingBalance` instruction was executed
+        pub actual_pending_balance_credit_counter: PodU64,
     }
 }

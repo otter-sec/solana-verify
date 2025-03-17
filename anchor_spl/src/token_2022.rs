@@ -1,5 +1,5 @@
 use onchor::{
-    prelude::{AccountInfo, AccountMeta, CpiContext, Vec},
+    prelude::{AccountInfo, AccountMeta, CpiContext, FastVec as Vec},
     ToAccountInfos, ToAccountMetas,
     solana_program::Result
 };

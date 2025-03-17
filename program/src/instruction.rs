@@ -1,8 +1,4 @@
 use super::pubkey::Pubkey;
-#[cfg(any(kani, feature = "kani"))]
-use crate::vec::fast::Vec;
-#[cfg(not(any(kani, feature = "kani")))]
-use std::vec::Vec;
 
 
 pub const TRANSACTION_LEVEL_STACK_HEIGHT: usize = 1;
@@ -12,9 +8,9 @@ pub struct Instruction {
     /// Pubkey of the instruction processor that executes this instruction
     pub program_id: Pubkey,
     /// Metadata for what accounts should be passed to the instruction processor
-    pub accounts: Vec<AccountMeta>,
+    pub accounts: crate::vec::fast::Vec<AccountMeta>,
     /// Opaque data passed to the instruction processor
-    pub data: Vec<u8>,
+    pub data: crate::vec::sparse::Vec<u8>,
 }
 
 #[derive(Default, PartialEq, Eq, Clone, Copy)]

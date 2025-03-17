@@ -131,6 +131,13 @@ impl<T: Default, const N: usize> From<[T; N]> for Vec<T> {
     }
 }
 
+impl<T: Default> From<std::vec::Vec<T>> for Vec<T> {
+    fn from(s: std::vec::Vec<T>) -> Vec<T> {
+        panic!("not allowed");
+        // Vec::new()
+    }
+}
+
 #[cfg(any(kani, feature = "kani"))]
 impl<T: kani::Arbitrary + Default> kani::Arbitrary for Vec<T> {
     fn any() -> Self {

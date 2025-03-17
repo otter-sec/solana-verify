@@ -44,14 +44,18 @@ impl Pubkey {
         }
     }
 
-    pub fn new_from_array<T: AsRef<[u8]>>(arr: T) -> Pubkey {
-        let bytes = arr.as_ref();
-        let mut pubkey_bytes = [0u8; PUBKEY_BYTES];
-        
-        let len = bytes.len().min(PUBKEY_BYTES);
-        pubkey_bytes[..len].copy_from_slice(&bytes[..len]);
+    pub const fn new_from_array(pubkey_array: [u8; 32]) -> Self {
+        Self{
+            t: [pubkey_array[0]],
+            _padding: [0; PUBKEY_PAD_BYTES]
+        }
+    }
 
-        Pubkey { t: pubkey_bytes, _padding: Default::default() }
+    pub const fn new_from_array2(pubkey_array: [u8; 1]) -> Self {
+        Self{
+            t: [pubkey_array[0]],
+            _padding: [0; PUBKEY_PAD_BYTES]
+        }
     }
 
     pub fn to_bytes(&self) -> [u8; PUBKEY_BYTES] {

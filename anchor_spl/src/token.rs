@@ -1,4 +1,4 @@
-use onchor::prelude::{AccountMeta, Vec, account, invariant, Accounts};
+use onchor::prelude::{AccountMeta, FastVec as Vec, account, invariant, Accounts};
 use onchor::solana_program::account_info::AccountInfo;
 
 use onchor::solana_program::pubkey::Pubkey;
@@ -151,12 +151,12 @@ pub mod accessor {
     // 1st byte of data is the mint key
     pub fn mint(account: &AccountInfo) -> Result<Pubkey> {
         let bytes = account.try_borrow_data()?;
-        Ok(Pubkey::new_from_array([bytes[0]]))
+        Ok(Pubkey::new_from_array2([bytes[0]]))
     }
 
     // 2nd byte of data is the authority key
     pub fn authority(account: &AccountInfo) -> Result<Pubkey> {
         let bytes = account.try_borrow_data()?;
-        Ok(Pubkey::new_from_array([bytes[1]]))
+        Ok(Pubkey::new_from_array2([bytes[1]]))
     }
 }

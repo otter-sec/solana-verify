@@ -1,7 +1,9 @@
 #[cfg(any(kani, feature = "kani"))]
-use crate::vec::fast::Vec;
+use crate::vec::fast::{Vec, VecIterator};
 #[cfg(not(any(kani, feature = "kani")))]
 use std::vec::Vec;
+
+use std::str::Chars;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -14,6 +16,10 @@ pub struct String {
 impl String {
     pub fn new() -> String {
         String { vec: Vec::new() }
+    }
+
+    pub fn chars(&self) -> Chars {
+        Box::leak(Box::new(std::string::String::from_utf8(self.vec.as_ref().to_vec()).unwrap())).chars()
     }
 }
 

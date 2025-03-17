@@ -1,5 +1,6 @@
 use crate::ToAccountInfo;
 use otter_solana_program::{account_info::AccountInfo, rent::Rent};
+use crate::prelude::{FastVec, ToAccountMetas, ToAccountInfos, AccountMeta};
 
 pub struct Sysvar<'info, T> {
     info: AccountInfo<'info>,
@@ -25,5 +26,17 @@ impl<'info, T: kani::Arbitrary> kani::Arbitrary for Sysvar<'info, T> {
             info: kani::any(),
             account: kani::any(),
         }
+    }
+}
+
+impl<'info, T> ToAccountMetas for Sysvar<'info, T> {
+    fn to_account_metas(&self, _is_signer: Option<bool>) -> FastVec<AccountMeta> {
+        vec![AccountMeta::new_readonly(*self.info.key, false)].into()
+    }
+}
+
+impl<'info, T> ToAccountInfos<'info> for Sysvar<'info, T> {
+    fn to_account_infos(&self) -> FastVec<AccountInfo<'info>> {
+        vec![self.info.clone()].into()
     }
 }

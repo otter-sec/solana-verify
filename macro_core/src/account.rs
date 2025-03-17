@@ -1,4 +1,7 @@
-use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser, codegen::accounts::__client_accounts, codegen::accounts::__cpi_client_accounts};
+use anchor_syn::{
+    AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser,
+    codegen::accounts::{__client_accounts, __cpi_client_accounts, bumps, to_account_infos, to_account_metas},
+    codegen::accounts::{generics, ParsedGenerics}};
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
 use quote::{quote, ToTokens, format_ident};
@@ -203,40 +206,16 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let item = item.to_token_stream();
     let val = syn::parse2::<AccountsStruct>(item)?;
     let ident = val.ident.clone();
-    let generics = val.generics.clone();
 
-    let bumps_fields = val
-        .fields
-        .iter()
-        .map(|field| {
-            let (boxed, ident) = match field {
-                AccountField::Field(field) => (is_field_boxed(field), &field.ident),
-                AccountField::CompositeField(c_field) => (false, &c_field.ident),
-            };
-            quote! {
-                #ident: u8
-            }
-        })
-        .collect::<Vec<TokenStream>>();
+    let ParsedGenerics {
+        combined_generics,
+        trait_generics: _,
+        struct_generics,
+        where_clause,
+    } = generics(&val);
 
-    let bumps_struct_ident = format_ident!("{}Bumps", ident);
+    let bumps_impl = bumps::generate(&val);
 
-    let generics = if bumps_fields.len() > 0 {
-        quote! { <'info> }
-    } else {
-        quote! {}
-    };
-
-    let bumps_impl = quote! {
-        #[derive(Default, Debug)]
-        pub struct #bumps_struct_ident {
-            #(#bumps_fields),*
-        }
-
-        impl #generics anchor_lang::Bumps for #ident #generics {
-            type Bumps = #bumps_struct_ident;
-        }
-    };
     println!("{}", bumps_impl);
 
     let fields = val
@@ -262,7 +241,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
 
     let arbitrary_impl = quote! {
-        impl #generics kani::Arbitrary for #ident #generics {
+        impl<#combined_generics> kani::Arbitrary for #ident<#struct_generics> #where_clause {
             fn any() -> Self {
                 Self {
                     #(#fields),*
@@ -277,6 +256,8 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let client_accounts = __client_accounts::generate(&val);
     let cpi_client_accounts = __cpi_client_accounts::generate(&val);
+    let to_account_metas = to_account_metas::generate(&val);
+    let to_account_infos = to_account_infos::generate(&val);
 
     let res = quote! {
         #bumps_impl
@@ -286,6 +267,8 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         #constraint_checks
         #client_accounts
         #cpi_client_accounts
+        #to_account_metas
+        #to_account_infos
     };
 
     // println!("{}", res);
@@ -363,7 +346,7 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
 
         impl anchor_lang::Owner for #ident {
             fn owner() -> anchor_lang::prelude::Pubkey {
-                anchor_lang::prelude::Pubkey::new_from_array([10; 1])
+                anchor_lang::prelude::Pubkey::new_from_array2([10; 1])
             }
         }
     };

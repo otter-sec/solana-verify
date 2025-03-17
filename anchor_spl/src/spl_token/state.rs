@@ -88,3 +88,7 @@ pub struct Multisig {
     /// Signer public keys
     pub signers: [Pubkey; MAX_SIGNERS],
 }
+
+impl Multisig {
+    pub const LEN: usize = 355;
+}

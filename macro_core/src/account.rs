@@ -1,8 +1,8 @@
-use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser};
+use anchor_syn::{AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser, codegen::accounts::__client_accounts, codegen::accounts::__cpi_client_accounts};
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
 use quote::{quote, ToTokens, format_ident};
-use syn::{ExprType, ItemStruct, LitStr, parse::{ParseStream}};
+use syn::{ExprType, ItemStruct, LitStr, parse::{ParseStream}, Lit};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let account_id_str = syn::parse2::<LitStr>(id_tokens)
@@ -221,13 +221,19 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let bumps_struct_ident = format_ident!("{}Bumps", ident);
 
+    let generics = if bumps_fields.len() > 0 {
+        quote! { <'info> }
+    } else {
+        quote! {}
+    };
+
     let bumps_impl = quote! {
         #[derive(Default, Debug)]
-        struct #bumps_struct_ident {
+        pub struct #bumps_struct_ident {
             #(#bumps_fields),*
         }
 
-        impl anchor_lang::Bumps for #ident<'_> {
+        impl #generics anchor_lang::Bumps for #ident #generics {
             type Bumps = #bumps_struct_ident;
         }
     };
@@ -269,13 +275,20 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let post_invariant_impl = create_post_invariants(&val);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
+    let client_accounts = __client_accounts::generate(&val);
+    let cpi_client_accounts = __cpi_client_accounts::generate(&val);
+
     let res = quote! {
         #bumps_impl
         #arbitrary_impl
         #pre_invariant_impl
         #post_invariant_impl
         #constraint_checks
+        #client_accounts
+        #cpi_client_accounts
     };
+
+    // println!("{}", res);
 
     Ok(res)
 }
@@ -285,18 +298,33 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let ident = item.ident;
 
     let args_parsed = syn::parse::Parser::parse2(
-        syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
+        syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated,
         args
     )?;
 
-    let is_zero_copy = args_parsed.iter().any(|x| x.is_ident("zero_copy"));
+    if args_parsed.iter().any(|x| {
+        if let syn::Expr::Lit(l) = x {
+            if let Lit::Str(s) = &l.lit {
+                return s.value() == String::from("internal");
+            }
+        }
+        false
+    }) { return Ok(input) }
+
+
+    let is_zero_copy = args_parsed.iter().any(|x| 
+        if let syn::Expr::Path(p) = x {
+            return p.path.is_ident("zero_copy")
+        } else { false }
+    );
 
     let ser_derives = if is_zero_copy {
         quote! {
+            #[derive(Clone)]
         }
     } else {
         quote! {
-            #[derive(AnchorSerialize, AnchorDeserialize)]
+            #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
         }
     };
 
@@ -315,13 +343,14 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
 
             impl AccountDeserialize for #ident {
                 fn try_deserialize_unchecked(buf: &mut &[u8]) -> solana_program::Result<Self> {
-                    Self::deserialize(buf).map_err(|_| anchor_lang::Error::AccountDidNotDeserialize)
+                    Ok(kani::any())
+                    // Self::deserialize(buf).map_err(|_| anchor_lang::Error::AccountDidNotDeserialize)
                 }
             }
         }
     };
 
-    let res = quote! {        
+    let res = quote! {
         #ser_derives
         #[derive(Arbitrary)]
         #input

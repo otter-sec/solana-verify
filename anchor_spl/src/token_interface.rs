@@ -4,7 +4,7 @@ use onchor as anchor_lang;
 pub use crate::spl_token_2022;
 pub use crate::token_2022::{TransferChecked, transfer, transfer_checked, Transfer};
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 #[repr(transparent)]
 #[account]
 pub struct Mint(spl_token_2022::state::Mint);
@@ -17,7 +17,7 @@ impl Deref for Mint {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 #[repr(transparent)]
 #[account]
 #[invariant()]

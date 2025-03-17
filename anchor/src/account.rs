@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::{prelude::AnchorDeserialize, ToAccountInfos, ToAccountMetas};
+use crate::{prelude::AnchorDeserialize, ToAccountInfos, ToAccountMetas, AccountSerialize, AccountDeserialize};
 use crate::{Owner, ToAccountInfo};
 use otter_solana_program::{
     account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result, vec::fast::Vec
@@ -71,12 +71,6 @@ impl<'info, T> ToAccountMetas for Account<'info, T> {
     }
 }
 
-impl<'info, T> ToAccountInfo<'info> for Account<'info, T> {
-    fn to_account_info(&self) -> AccountInfo<'info> {
-        self.info
-    }
-}
-
 impl<'info, T> ToAccountInfos<'info> for Account<'info, T> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
         vec![self.info].into()
@@ -139,5 +133,20 @@ impl ToAccountMetas for AccountInfo<'_> {
 impl<'info> ToAccountInfos<'info> for AccountInfo<'info> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
         vec![self.clone()].into()
+    }
+}
+
+impl<'info, T: ToAccountInfos<'info>> ToAccountInfos<'info> for Option<T> {
+    fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
+        self.as_ref()
+            .map_or_else(Vec::new, |account| account.to_account_infos())
+    }
+}
+
+impl<'info, T: AccountSerialize + AccountDeserialize + Clone> AsRef<AccountInfo<'info>>
+    for Account<'info, T>
+{
+    fn as_ref(&self) -> &AccountInfo<'info> {
+        &self.info
     }
 }

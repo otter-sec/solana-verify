@@ -1,13 +1,11 @@
-use onchor::prelude::{AccountMeta, Vec, account, invariant};
+use onchor::prelude::{AccountMeta, Vec, account, invariant, Accounts};
 use onchor::solana_program::account_info::AccountInfo;
 
 use onchor::solana_program::pubkey::Pubkey;
-pub use onchor::system_program::Transfer;
 use onchor::context::CpiContext;
 use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas, AccountDeserialize, AccountSerialize, AnchorSerialize, AnchorDeserialize};
 
-use crate::token_2022::TransferChecked;
-use crate::spl_token;
+pub use crate::spl_token;
 
 use std::ops::Deref;
 
@@ -16,6 +14,20 @@ use onchor as anchor_lang;
 
 solana_program::declare_id!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
+#[derive(Accounts)]
+pub struct Transfer<'info> {
+    pub from: AccountInfo<'info>,
+    pub to: AccountInfo<'info>,
+    pub authority: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
+pub struct TransferChecked<'info> {
+    pub from: AccountInfo<'info>,
+    pub mint: AccountInfo<'info>,
+    pub to: AccountInfo<'info>,
+    pub authority: AccountInfo<'info>,
+}
 
 pub fn transfer<'info>(
     _ctx: CpiContext<'_, '_, '_, 'info, Transfer<'info>>,
@@ -83,7 +95,7 @@ pub fn mint_to<'info>(_: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, _: u64) -
 
 // TokenAccount
 
-#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[derive(Debug, Default, PartialEq, Copy)]
 #[account]
 #[invariant()]
 pub struct TokenAccount(spl_token::state::Account);
@@ -102,7 +114,7 @@ impl Deref for TokenAccount {
 
 // Mint
 
-#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[derive(Debug, Default, PartialEq, Copy)]
 #[account]
 #[invariant()]
 pub struct Mint(spl_token::state::Mint);

@@ -10,12 +10,6 @@ pub struct Program<'info, T> {
     _phantom: PhantomData<T>,
 }
 
-impl<'info, T> ToAccountInfo<'info> for Program<'info, T> {
-    fn to_account_info(&self) -> AccountInfo<'info> {
-        self.info
-    }
-}
-
 impl<'info, T> Deref for Program<'info, T> {
     type Target = AccountInfo<'info>;
 
@@ -40,6 +34,10 @@ impl<'a, T> Program<'a, T> {
 
     pub fn programdata_address(&self) -> Result<Option<Pubkey>> {
         Ok(Some(*self.info.key))
+    }
+
+    fn key(&self) -> Pubkey {
+        *self.info.key
     }
 }
 

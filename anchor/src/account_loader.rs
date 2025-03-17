@@ -5,6 +5,7 @@ pub use otter_solana_program::Key;
 use otter_solana_program::{account_info::AccountInfo, error::Error, Result};
 
 use crate::{Owner, ToAccountInfo};
+use core::cell::{Ref, RefMut, RefCell};
 
 #[derive(Clone)]
 pub struct AccountLoader<'info, T: Owner> {
@@ -57,18 +58,21 @@ impl<'info, T: Owner> kani::Arbitrary for AccountLoader<'info, T> {
 #[cfg(any(kani, feature = "kani"))]
 impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
     #[inline(never)]
-    pub fn load(&self) -> Result<T> {
-        Ok(T::any())
+    pub fn load(&self) -> Result<Ref<T>> {
+        let x = Box::new(RefCell::new(T::any()));
+        Ok(Box::leak(x).borrow())
     }
 
     #[inline(never)]
-    pub fn load_mut(&self) -> Result<T> {
-        Ok(T::any())
+    pub fn load_mut(&self) -> Result<RefMut<T>> {
+        let x = Box::new(RefCell::new(T::any()));
+        Ok(Box::leak(x).borrow_mut())
     }
 
     #[inline(never)]
-    pub fn load_init(&self) -> Result<T> {
-        Ok(T::any())
+    pub fn load_init(&self) -> Result<RefMut<T>> {
+        let x = Box::new(RefCell::new(T::any()));
+        Ok(Box::leak(x).borrow_mut())
     }
 }
 

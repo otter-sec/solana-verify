@@ -1,9 +1,9 @@
 use onchor::{
     prelude::{AccountInfo, AccountMeta, CpiContext, Vec},
     ToAccountInfos, ToAccountMetas,
+    solana_program::Result
 };
 
-use crate::Result;
 pub use crate::spl_token_2022;
 
 #[derive(Debug)]

@@ -179,6 +179,11 @@ impl<T> Vec<T> {
     where
         F: FnMut(&T) -> bool,
     {}
+
+    pub fn to_vec(&self) -> Self 
+    where T: Clone {
+        self.clone()
+    }
 }
 
 impl<T> ops::Deref for Vec<T> {

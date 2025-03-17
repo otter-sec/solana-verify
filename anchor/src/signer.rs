@@ -15,12 +15,6 @@ impl<'info> Key for Signer<'info> {
     }
 }
 
-impl<'info> ToAccountInfo<'info> for Signer<'info> {
-    fn to_account_info(&self) -> AccountInfo<'info> {
-        self.info
-    }
-}
-
 impl<'info> Deref for Signer<'info> {
     type Target = AccountInfo<'info>;
 

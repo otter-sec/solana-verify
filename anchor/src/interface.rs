@@ -27,9 +27,15 @@ impl<'a, T> Interface<'a, T> {
     }
 }
 
-impl<'info, T> ToAccountInfo<'info> for Interface<'info, T> {
-    fn to_account_info(&self) -> AccountInfo<'info> {
-        self.0.to_account_info()
+impl<'info, T> Deref for Interface<'info, T> {
+    type Target = AccountInfo<'info>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<'info, T> AsRef<AccountInfo<'info>> for Interface<'info, T> {
+    fn as_ref(&self) -> &AccountInfo<'info> {
+        &self.0
     }
 }
 

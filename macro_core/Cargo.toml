@@ -4,12 +4,13 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-anchor-syn = { path = "../dependencies/anchor/lang/syn", features = ["hash", "init-if-needed"] }
+anchor-syn = { path = "../dependencies/anchor/lang/syn", features = ["hash", "init-if-needed", "no-idl"] }
 anyhow = { workspace = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true }
 convert_case = "0.7.1"
+heck = "0.4.0"
 
 [features]
 default = []

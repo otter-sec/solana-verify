@@ -399,6 +399,10 @@ pub enum ErrorCode {
     Deprecated = 5000,
 }
 
+impl Error {
+    pub fn with_account_name(self) -> Self { self }
+}
+
 impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Extract variant name from the type info

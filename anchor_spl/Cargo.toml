@@ -8,6 +8,7 @@ kani = { workspace = true, optional = true }
 onchor = { path = "../anchor" }
 borsh = { workspace = true }
 num_enum = { workspace = true }
+bytemuck = { workspace = true }
 
 [features]
 default = []

@@ -109,8 +109,8 @@ where
 
 #[derive(Debug)]
 pub struct CpiContext<'a, 'b, 'c, 'info, T>
-where
-    T: ToAccountMetas + ToAccountInfos<'info>,
+// where
+    // T: ToAccountMetas + ToAccountInfos<'info>,
 {
     pub accounts: T,
     pub remaining_accounts: Vec<AccountInfo<'info>>,
@@ -119,8 +119,8 @@ where
 }
 
 impl<'a, 'b, 'c, 'info, T> CpiContext<'a, 'b, 'c, 'info, T>
-where
-    T: ToAccountMetas + ToAccountInfos<'info>,
+// where
+    // T: ToAccountMetas + ToAccountInfos<'info>,
 {
     pub fn new(program: AccountInfo<'info>, accounts: T) -> Self {
         Self {

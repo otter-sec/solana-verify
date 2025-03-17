@@ -68,6 +68,12 @@ impl Pubkey {
     }
 }
 
+impl From<[u8; 32]> for Pubkey {
+    fn from(x: [u8; 32]) -> Self {
+        Self::new_from_array(x)
+    }
+}
+
 #[cfg(not(any(kani, feature = "kani")))]
 impl Pubkey {
     pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Result<Pubkey, Box<dyn std::error::Error>> {

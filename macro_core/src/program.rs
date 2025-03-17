@@ -11,6 +11,8 @@ use syn::{
     ItemMod, Pat, PatType, PathArguments, Stmt, Type,
 };
 use convert_case::{Case, Casing};
+use heck::{ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
+use anchor_syn::{Program, codegen::program::accounts::generate as generate_accounts, codegen::program::instruction::generate as generate_instructions};
 
 const KANI_UNWIND_AMOUNT: usize = 100;
 
@@ -335,7 +337,8 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
 }
 
 pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let mut item = syn::parse2::<ItemMod>(input)?;
+    let mut item = syn::parse2::<ItemMod>(input.clone())?;
+
     let name = &item.ident;
     let items = &mut item.content;
     if items.is_none() {
@@ -343,8 +346,6 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     }
 
     let mut harnesses = Vec::new();
-    let mut instruction_structs = Vec::new();
-    let mut discriminator_value = 1u8;
 
     for item in &mut items.as_mut().unwrap().1 {
         if let Item::Fn(item) = item {
@@ -353,32 +354,25 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
             } else {
                 println!("ignored harness for: {:?}", item.sig.ident);
             }
-
-            // Create struct and discriminator for each function
-            let struct_name = format_ident!("{}", item.sig.ident.to_string().to_case(Case::Title).replace(" ", ""));
-            let discriminator = discriminator_value;
-            discriminator_value += 1;
-
-            instruction_structs.push(quote! {
-                pub struct #struct_name;
-
-                impl #struct_name {
-                    pub const DISCRIMINATOR: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, #discriminator];
-                }
-            });
         }
     }
 
-    let instruction_mod = quote! {
-        mod instruction {
-            #(#instruction_structs)*
-        }
-    };
+    let uppercase = format_ident!("{}", name.to_string().to_upper_camel_case());
+    let program = syn::parse2::<Program>(input.clone())?;
+
+    let accounts_mod = generate_accounts(&program);
+    let instructions_mod = generate_instructions(&program);
+    // println!("{}", accounts_mod);
 
     let res = quote! {
         #item
         #(#harnesses)*
-        #instruction_mod
+        pub mod program {
+            #[derive(kani::Arbitrary)]
+            pub struct #uppercase {}
+        }
+        #accounts_mod
+        #instructions_mod
     };
     Ok(res)
 }

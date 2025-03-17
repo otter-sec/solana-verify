@@ -110,7 +110,7 @@ pub mod prelude {
 // TODO make this use ThisError somehow
 #[macro_export]
 macro_rules! err {
-    ($v:expr) => {
+    ($v:expr $(,)?) => {
         Err(anchor_lang::solana_program::error::Error::Generic)
     };
 }
@@ -263,21 +263,14 @@ pub trait ToAccountInfo<'info> {
     fn to_account_info(&self) -> AccountInfo<'info>;
 }
 
-impl<'info> ToAccountInfo<'info> for AccountInfo<'info> {
+impl<'info, T> ToAccountInfo<'info> for T
+where
+    T: AsRef<AccountInfo<'info>>,
+{
     fn to_account_info(&self) -> AccountInfo<'info> {
-        *self
+        self.as_ref().clone()
     }
 }
-
-// impl<'info, T> ToAccountInfo<'info> for T
-// where
-//     T: AsRef<AccountInfo<'info>>,
-// {
-//     fn to_account_info(&self) -> AccountInfo<'info> {
-//         self.as_ref().clone()
-//     }
-// }
-
 
 pub trait AccountSerialize {
     fn try_serialize<W: Write>(&self, _writer: &mut W) -> Result<()> {
@@ -296,7 +289,7 @@ pub trait AccountDeserialize: Sized {
     fn try_deserialize_unchecked(buf: &mut &[u8]) -> Result<Self>;
 }
 
-pub trait Accounts<'info>: ToAccountMetas + ToAccountInfos<'info> + Sized {
+pub trait Accounts<'info, B>: ToAccountMetas + ToAccountInfos<'info> + Sized {
     /// Returns the validated accounts struct. What constitutes "valid" is
     /// program dependent. However, users of these types should never have to
     /// worry about account substitution attacks. For example, if a program
@@ -310,9 +303,9 @@ pub trait Accounts<'info>: ToAccountMetas + ToAccountInfos<'info> + Sized {
     /// so that it cannot be used again.
     fn try_accounts(
         program_id: &Pubkey,
-        accounts: &mut &[AccountInfo<'info>],
+        accounts: &mut &'info [AccountInfo<'info>],
         ix_data: &[u8],
-        bumps: &mut BTreeMap<String, u8>,
+        bumps: &mut B,
         reallocs: &mut BTreeSet<Pubkey>,
     ) -> otter_solana_program::Result<Self>;
 }
@@ -343,10 +336,19 @@ pub trait ToAccountMetas {
     fn to_account_metas(&self, is_signer: Option<bool>) -> solana_program::vec::fast::Vec<AccountMeta>;
 }
 
+pub trait InstructionData {
+    fn data(&self) -> solana_program::vec::sparse::Vec<u8>;
+}
+
 pub trait Id {
     fn id() -> Pubkey;
 }
 
 pub trait Space {
     const INIT_SPACE: usize;
+}
+
+pub mod idl {
+    pub const IDL_IX_TAG: u64 = 0x0a69e9a778bcf440;
+    pub const IDL_IX_TAG_LE: [u8; 8] = IDL_IX_TAG.to_le_bytes();
 }

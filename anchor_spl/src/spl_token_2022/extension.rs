@@ -141,7 +141,9 @@ impl<'data, S: BaseState + kani::Arbitrary> StateWithExtensions<'data, S> {
     }
 
     pub fn get_extension_types(&self) -> Result<FastVec<ExtensionType>, ProgramError> {
-        Ok(kani::any())
+        let v: FastVec<ExtensionType> = kani::any();
+        kani::assume(v.len() <= 4);
+        Ok(v)
     }
 }
 

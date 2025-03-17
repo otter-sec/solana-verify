@@ -3,4 +3,4 @@
 	url = git@github.com:model-checking/kani.git
 [submodule "dependencies/anchor"]
 	path = dependencies/anchor
-	url = git@github.com:coral-xyz/anchor.git
+	url = git@github.com:otter-sec/anchor.git

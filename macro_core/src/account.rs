@@ -41,6 +41,14 @@ fn is_field_boxed(field: &Field) -> bool {
     account_ty.boxed
 }
 
+fn is_field_optional(field: &AccountField) -> bool {
+    let AccountField::Field(f) = &field else {
+        return false;
+    };
+
+    f.is_optional
+}
+
 fn get_valid_field(field: &AccountField) -> Option<&Field> {
     let AccountField::Field(f) = &field else {
         return None;
@@ -49,10 +57,10 @@ fn get_valid_field(field: &AccountField) -> Option<&Field> {
 }
 
 fn get_valid_constraints(field: &Field) -> Option<&ConstraintGroup> {
-    let Ty::Account(_) = &field.ty else {
-        return None;
-    };
-    Some(&field.constraints)
+    match field.ty {
+        Ty::Account(_) | Ty::AccountLoader(_) => Some(&field.constraints),
+        _ => None
+    }
 }
 
 fn get_valid_ident_constraints(field: &AccountField) -> Option<(&Ident, &ConstraintGroup)> {
@@ -120,8 +128,14 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
             if constraints.init.is_some() {
                 continue;
             } else {
-                let invariant = quote! {
-                    self.#ident.account._check_invariant()
+                let invariant = if is_field_optional(field) {
+                    quote! {
+                        self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
+                    }
+                } else {
+                    quote! {
+                        self.#ident.account_for_verification()._check_invariant()
+                    }
                 };
                 pre.push(invariant);
             }
@@ -156,17 +170,31 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
             if constraints.is_close() {
                 continue;
             }
-            let invariant = quote! {
-                self.#ident.account._check_invariant()
+            let invariant = if is_field_optional(field) {
+                quote! {
+                    self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
+                }
+            } else {
+                quote! {
+                    self.#ident.account_for_verification()._check_invariant()
+                }
             };
+
+            let transition_invariant = match (constraints.init.as_ref(), is_field_optional(field)) {
+                (None, true) => quote! { self.#ident.as_ref().map(|x| x.account_for_verification()._check_transition_invariant(old.#ident.as_ref().unwrap().account_for_verification())).unwrap_or(true) },
+                (None, false) => quote! { self.#ident.account_for_verification()._check_transition_invariant(old.#ident.account_for_verification()) },
+                _ => quote! { true }
+            };
+
             post.push(invariant);
+            post.push(transition_invariant);
         }
     }
 
     if post.is_empty() {
         quote! {
             impl #generics #ident #generics {
-                pub fn __post_invariants(&self) -> bool {
+                pub fn __post_invariants(&self, old: &Self) -> bool {
                     true
                 }
             }
@@ -174,7 +202,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
     } else {
         quote! {
             impl #generics #ident #generics {
-                pub fn __post_invariants(&self) -> bool {
+                pub fn __post_invariants(&self, old: &Self) -> bool {
                     #(#post)&&*
                 }
             }
@@ -186,9 +214,10 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let arg_item = syn::parse2::<ItemStruct>(item.clone())?;
     let mut arg_names: Vec<Ident> = vec![];
     let mut arg_types: Vec<syn::Type> = vec![];
+    let mut has_clone = false;
 
     for t in arg_item.attrs {
-        if t.path.to_token_stream().to_string() == "instruction" {
+        if t.path.is_ident("instruction") {
             let g = syn::parse2::<Group>(t.tokens)?;
             for arg in g.stream().to_string().split(',') {
                 let parsed_arg = syn::parse_str::<ExprType>(arg.trim())?;
@@ -200,6 +229,10 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                     &parsed_arg.ty.to_token_stream().to_string(),
                 )?);
             }
+        } else if t.path.is_ident("invariant") {
+            unimplemented!("invariants are only supported on #[account] structs")
+        } else if t.path.is_ident("derive") && t.tokens.to_string().contains("Clone") {
+            has_clone = true;
         }
     }
 
@@ -216,7 +249,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let bumps_impl = bumps::generate(&val);
 
-    println!("{}", bumps_impl);
+    // println!("{}", bumps_impl);
 
     let fields = val
         .fields
@@ -250,6 +283,27 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         }
     };
 
+    let clone_impl = if has_clone {
+        quote! {}
+    } else {
+        let clone_fields = val.fields.iter().map(|x| {
+            let ident = match x {
+                AccountField::Field(field) => &field.ident,
+                AccountField::CompositeField(field) => &field.ident,
+            };
+            quote! { #ident: self.#ident.clone() }
+        }).collect::<Vec<_>>();
+        quote! {
+            impl<#combined_generics> Clone for #ident<#struct_generics> #where_clause {
+                fn clone(&self) -> Self {
+                    Self {
+                        #(#clone_fields),*
+                    }
+                }
+            }
+        }
+    };
+
     let pre_invariant_impl = create_pre_invariants(&val);
     let post_invariant_impl = create_post_invariants(&val);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
@@ -262,6 +316,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let res = quote! {
         #bumps_impl
         #arbitrary_impl
+        #clone_impl
         #pre_invariant_impl
         #post_invariant_impl
         #constraint_checks
@@ -279,6 +334,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let item = syn::parse2::<ItemStruct>(input.clone())?;
     let ident = item.ident;
+
 
     let args_parsed = syn::parse::Parser::parse2(
         syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated,
@@ -333,9 +389,23 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
         }
     };
 
+    let invariant = match (
+        item.attrs.iter().any(|x| x.path.is_ident("invariant")),
+        item.attrs.iter().any(|x| x.path.is_ident("transition_invariant"))
+    ) {
+        (false, false) => quote! {
+            #[anchor_lang::prelude::invariant()]
+            #[anchor_lang::prelude::transition_invariant()]
+        },
+        (true, false) => quote! { #[anchor_lang::prelude::transition_invariant()] },
+        (false, true) => quote! { #[anchor_lang::prelude::invariant()] },
+        _ => quote! {},
+    };
+
     let res = quote! {
         #ser_derives
         #[derive(Arbitrary)]
+        #invariant
         #input
 
         #ser_impls

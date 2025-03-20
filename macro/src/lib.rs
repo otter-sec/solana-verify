@@ -43,6 +43,13 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
+#[proc_macro_attribute]
+pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> TokenStream {
+    core::invariant::transition_invariant(attr.into(), item.into())
+        .unwrap()
+        .into()
+}
+
 #[cfg(feature = "anchor")]
 #[proc_macro_attribute]
 pub fn program(args: TokenStream, item: TokenStream) -> TokenStream {

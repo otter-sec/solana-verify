@@ -7,6 +7,15 @@ pub struct Sysvar<'info, T> {
     account: T,
 }
 
+impl<'info, T: Clone> Clone for Sysvar<'info, T> {
+    fn clone(&self) -> Self {
+        Self {
+            info: self.info.clone(),
+            account: self.account.clone()
+        }
+    }
+}
+
 impl<'info, T> ToAccountInfo<'info> for Sysvar<'info, T> {
     fn to_account_info(&self) -> AccountInfo<'info> {
         self.info

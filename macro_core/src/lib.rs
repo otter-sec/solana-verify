@@ -5,6 +5,8 @@ pub mod helper_fn;
 pub mod invariant;
 pub mod space;
 pub mod stub;
+pub mod stubs;
+
 #[cfg(feature = "verify")]
 pub mod verify;
 

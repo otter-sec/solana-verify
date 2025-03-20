@@ -7,9 +7,6 @@ pub const PUBKEY_BYTES: usize = 1;
 pub const PUBKEY_PAD_BYTES: usize = 32 - PUBKEY_BYTES;
 
 #[derive(
-    PartialEq,
-    Eq,
-    Clone,
     Copy,
     PartialOrd,
     Ord,
@@ -26,6 +23,15 @@ pub const PUBKEY_PAD_BYTES: usize = 32 - PUBKEY_BYTES;
 pub struct Pubkey {
     pub t: [u8; PUBKEY_BYTES],
     pub _padding: [u8; PUBKEY_PAD_BYTES],
+}
+
+impl Eq for Pubkey {}
+impl PartialEq for Pubkey {
+    fn eq(&self, other: &Self) -> bool { self.t == other.t }
+}
+
+impl Clone for Pubkey {
+    fn clone(&self) -> Self { Self { t: self.t.clone(), _padding: [0; PUBKEY_PAD_BYTES] } }
 }
 
 

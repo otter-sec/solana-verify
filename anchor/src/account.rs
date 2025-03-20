@@ -19,6 +19,7 @@ impl<'a, T> Account<'a, T> {
     }
 
     pub fn reload(&mut self) -> Result<()> {
+        unimplemented!();
         Ok(())
     }
 
@@ -32,6 +33,10 @@ impl<'a, T> Account<'a, T> {
 
     pub fn close(self, _info: AccountInfo<'_>) -> Result<()> {
         Ok(())
+    }
+
+    pub fn account_for_verification(&self) -> &T {
+        &self.account
     }
 }
 

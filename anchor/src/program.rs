@@ -3,11 +3,19 @@ use std::{marker::PhantomData, ops::Deref};
 use crate::{prelude::Result, ToAccountInfo};
 use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
-#[derive(Clone)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Program<'info, T> {
     info: AccountInfo<'info>,
     _phantom: PhantomData<T>,
+}
+
+impl<'info, T> Clone for Program<'info, T> {
+    fn clone(&self) -> Self {
+        Self {
+            info: self.info.clone(),
+            _phantom: PhantomData
+        }
+    }
 }
 
 impl<'info, T> Deref for Program<'info, T> {

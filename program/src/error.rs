@@ -182,8 +182,8 @@ pub enum Error {
     #[error("The API being used is deprecated and should no longer be used")]
     Deprecated,
 
-    #[error(transparent)]
-    StdIo(#[from] std::io::Error),
+    #[error("StdIo error")]
+    StdIo,
 
     #[error(transparent)]
     SystemTime(#[from] std::time::SystemTimeError),
@@ -201,8 +201,14 @@ pub enum Error {
     #[error("An error occurred: {0}")]
     CustomError(String),
     // BoxError is a transparent error that can be used to wrap any error in a Box.
-    #[error(transparent)]
-    BoxError(#[from] Box<dyn std::error::Error>),
+    // #[error(transparent)]
+    // BoxError(#[from] Box<dyn std::error::Error>),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::StdIo
+    }
 }
 
 

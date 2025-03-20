@@ -14,6 +14,8 @@ use convert_case::{Case, Casing};
 use heck::{ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
 use anchor_syn::{Program, codegen::program::accounts::generate as generate_accounts, codegen::program::instruction::generate as generate_instructions};
 
+use crate::stubs::{stubs_def, stubs_attr};
+
 const KANI_UNWIND_AMOUNT: usize = 100;
 
 fn get_ctx_type(ctx_param: &PatType) -> syn::Result<Punctuated<GenericArgument, Comma>> {
@@ -145,24 +147,45 @@ fn create_verify(
     ctx_type: &Punctuated<GenericArgument, Comma>,
     parameters: &[&PatType],
     parameter_names: &[Ident],
+    postcondition: Option<Attribute>,
 ) -> syn::Result<TokenStream> {
+
+    let postcondition = match postcondition {
+        Some(x) => quote! { (#x) },
+        None => quote! { true }
+    };
+
     let proof_name = format_ident!("verify_{}", function_name, span = function_name.span());
+
+    let stubs_attr = stubs_attr(mod_name);
+    println!("stub: {}", stubs_attr);
+
     let res = quote! {
         #[kani::proof]
         #[kani::unwind(#KANI_UNWIND_AMOUNT)]
+        #stubs_attr
         pub fn #proof_name #generics () {
             #(
                 let #parameters = kani::any();
             );*
 
             let conc: anchor_lang::context::ConcreteContext<#ctx_type> = kani::any();
+            let dummy = conc.clone_as_dummy();
+
             let ctx = conc.to_ctx();
+
             kani::assume(conc.to_ctx().accounts.__pre_invariants());
             let result = #mod_name::#function_name(#(#parameter_names),*);
+
             kani::assert(
-                result.is_err() || conc.to_ctx().accounts.__post_invariants(),
-                "Function failed",
+                result.is_err() || conc.to_ctx().accounts.__post_invariants(&dummy.accounts),
+                "account invariant is not satisfied",
             );
+
+            let before = &dummy.accounts;
+            let after = conc.to_ctx().accounts;
+
+            assert!(result.is_err() || #postcondition);
         }
     };
     Ok(res)
@@ -268,6 +291,7 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
     let mut errors_if_harness: Option<TokenStream> = None;
     let mut create_succeeds_attr: Option<Attribute> = None;
     let mut create_errors_attr: Option<Attribute> = None;
+    let mut postcondition: Option<Attribute> = None;
     let mut has_constraint = false;
 
     for attr in std::mem::take(&mut item.attrs).into_iter() {
@@ -277,6 +301,8 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
             create_errors_attr = Some(attr);
         } else if attr.path.is_ident("has_constraint") {
             has_constraint = true;
+        } else if attr.path.is_ident("post_condition") {
+            postcondition = Some(attr);
         } else {
             item.attrs.push(attr);
         }
@@ -315,6 +341,7 @@ fn verification_harness_of(mod_name: &Ident, item: &mut ItemFn) -> syn::Result<T
         &ctx_type,
         &parameters,
         &parameter_names,
+        postcondition
     )?;
 
     let res = match (succeeds_if_harness, errors_if_harness) {
@@ -364,8 +391,13 @@ pub fn program(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let instructions_mod = generate_instructions(&program);
     // println!("{}", accounts_mod);
 
+    let stubs_def = stubs_def(name);
+
     let res = quote! {
         #item
+
+        #stubs_def
+
         #(#harnesses)*
         pub mod program {
             #[derive(kani::Arbitrary)]

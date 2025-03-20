@@ -20,7 +20,6 @@ impl Deref for Mint {
 #[derive(Debug, Default, PartialEq)]
 #[repr(transparent)]
 #[account]
-#[invariant()]
 pub struct TokenAccount(spl_token_2022::state::Account);
 
 impl Deref for TokenAccount {

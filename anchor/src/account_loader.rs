@@ -13,7 +13,8 @@ pub struct AccountLoader<'info, T: Owner> {
     phantom: PhantomData<&'info T>,
 }
 
-impl<'info, T: Owner> AccountLoader<'info, T> {
+#[cfg(any(kani, feature = "kani"))]
+impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
         Self { acc_info, phantom: PhantomData }
     }
@@ -36,6 +37,25 @@ impl<'info, T: Owner> AccountLoader<'info, T> {
         // No-op close operation
         Ok(())
     }
+
+    #[inline(never)]
+    pub fn load(&self) -> Result<Ref<T>> {
+        Ok(self.acc_info.as_account::<T>())
+    }
+
+    #[inline(never)]
+    pub fn load_mut(&self) -> Result<RefMut<T>> {
+        Ok(self.acc_info.as_account_mut::<T>())
+    }
+
+    #[inline(never)]
+    pub fn load_init(&self) -> Result<RefMut<T>> {
+        Ok(self.acc_info.as_account_mut::<T>())
+    }
+
+    pub fn account_for_verification(&self) -> Ref<T> {
+        self.acc_info.as_account::<T>()
+    }
 }
 
 impl<'info, T: Owner> Key for AccountLoader<'info, T> {
@@ -45,34 +65,12 @@ impl<'info, T: Owner> Key for AccountLoader<'info, T> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner> kani::Arbitrary for AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary> kani::Arbitrary for AccountLoader<'info, T> {
     fn any() -> Self {
         Self {
             acc_info: kani::any(),
-            phantom: PhantomData,
+            phantom: PhantomData
         }
-    }
-}
-
-
-#[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
-    #[inline(never)]
-    pub fn load(&self) -> Result<Ref<T>> {
-        let x = Box::new(RefCell::new(T::any()));
-        Ok(Box::leak(x).borrow())
-    }
-
-    #[inline(never)]
-    pub fn load_mut(&self) -> Result<RefMut<T>> {
-        let x = Box::new(RefCell::new(T::any()));
-        Ok(Box::leak(x).borrow_mut())
-    }
-
-    #[inline(never)]
-    pub fn load_init(&self) -> Result<RefMut<T>> {
-        let x = Box::new(RefCell::new(T::any()));
-        Ok(Box::leak(x).borrow_mut())
     }
 }
 
@@ -89,6 +87,7 @@ impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
             owner: self.acc_info.owner,
             executable: self.acc_info.executable,
             rent_epoch: self.acc_info.rent_epoch,
+            deserialized: self.acc_info.deserialized
         }
     }
 }

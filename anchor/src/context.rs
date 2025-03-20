@@ -36,6 +36,10 @@ pub struct ConcreteContext<'a, 'b, 'c, 'info, T: Bumps> {
     _c: PhantomData<&'c u8>,
 }
 
+pub struct DummyContext<T: Bumps + Clone> {
+    pub accounts: T,
+}
+
 impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn to_ctx<'a>(&'a self) -> Context<'a, 'a, 'a, 'info, T> {
         Context {
@@ -43,6 +47,14 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
             accounts: unsafe { (&self.accounts as *const T as *mut T).as_mut().unwrap() },
             remaining_accounts: &self.remaining_accounts,
             bumps: T::Bumps::default()
+        }
+    }
+}
+
+impl <'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
+    pub fn clone_as_dummy(&'a self) -> DummyContext<T> {
+        DummyContext {
+            accounts: self.accounts.clone()
         }
     }
 }

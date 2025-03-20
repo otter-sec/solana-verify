@@ -162,6 +162,7 @@ impl<T> Vec<T> {
     }
 
     pub fn as_slice(&self) -> &[T] {
+        kani::assume(self.size < VEC_SIZE);
         &self.data[..self.size]
     }
 
@@ -191,6 +192,7 @@ impl<T> ops::Deref for Vec<T> {
 
     #[inline]
     fn deref(&self) -> &[T] {
+        kani::assume(self.size < VEC_SIZE);
         unsafe { slice::from_raw_parts(self.data.as_ptr(), self.size) }
     }
 }
@@ -198,6 +200,7 @@ impl<T> ops::Deref for Vec<T> {
 impl<T> ops::DerefMut for Vec<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [T] {
+        kani::assume(self.size < VEC_SIZE);
         unsafe { slice::from_raw_parts_mut(self.data.as_mut_ptr(), self.size) }
     }
 }
@@ -205,13 +208,18 @@ impl<T> ops::DerefMut for Vec<T> {
 impl<'a, T> Iterator for VecIterator<'a, T> {
     type Item = &'a T;
 
+    #[inline(never)]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.idx >= self.vec.size {
+        let idx = self.idx;
+        self.idx += 1;
+
+        if idx >= self.vec.size {
             return None;
         }
 
-        let res = &self.vec.data[self.idx];
-        self.idx += 1;
+        kani::assume(idx < VEC_SIZE);
+
+        let res = &self.vec.data[idx];
         Some(res)
     }
 }
@@ -228,13 +236,18 @@ impl<'a, T> IntoIterator for &'a Vec<T> {
 impl<T: Clone> Iterator for VecIntoIterator<T> {
     type Item = T;
 
+    #[inline(never)]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.idx >= self.vec.size {
+        let idx = self.idx;
+        self.idx += 1;
+
+        if idx >= self.vec.size {
             return None;
         }
 
-        let res = self.vec.data[self.idx].clone();
-        self.idx += 1;
+        kani::assume(idx < VEC_SIZE);
+
+        let res = self.vec.data[idx].clone();
         Some(res)
     }
 }

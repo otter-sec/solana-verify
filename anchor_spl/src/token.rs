@@ -97,7 +97,6 @@ pub fn mint_to<'info>(_: CpiContext<'_, '_, '_, 'info, MintTo<'info>>, _: u64) -
 
 #[derive(Debug, Default, PartialEq, Copy)]
 #[account]
-#[invariant()]
 pub struct TokenAccount(spl_token::state::Account);
 
 impl TokenAccount {
@@ -116,7 +115,6 @@ impl Deref for TokenAccount {
 
 #[derive(Debug, Default, PartialEq, Copy)]
 #[account]
-#[invariant()]
 pub struct Mint(spl_token::state::Mint);
 
 impl Mint {

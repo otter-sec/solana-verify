@@ -17,3 +17,4 @@ syn = { version = "1.0.108", features = ["full"] }
 thiserror = "1.0.65"
 bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
 num_enum = "0.7.3"
+dyn-clone = "1.0.19"

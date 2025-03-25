@@ -21,8 +21,8 @@ pub fn stubs_def(name: &Ident) -> TokenStream {
                 let quo: crate::utils::fraction::U256 = kani::any();
                 let rem: crate::utils::fraction::U256 = kani::any();
 
-                kani::assume(rem < x2);
-                kani::assume(quo.overflowing_mul(x2).0.overflowing_add(rem).0 == x1);
+                // kani::assume(rem < x2);
+                // kani::assume(quo.overflowing_mul(x2).0.overflowing_add(rem).0 == x1);
 
                 (quo, rem)
             }
@@ -31,7 +31,6 @@ pub fn stubs_def(name: &Ident) -> TokenStream {
 }
 pub fn stubs_attr(name: &Ident) -> TokenStream {
     if name != KLEND_NAME {
-        println!("ignoring {}", name);
         return quote! {};
     }
 

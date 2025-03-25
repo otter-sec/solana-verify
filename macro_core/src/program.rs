@@ -158,7 +158,6 @@ fn create_verify(
     let proof_name = format_ident!("verify_{}", function_name, span = function_name.span());
 
     let stubs_attr = stubs_attr(mod_name);
-    println!("stub: {}", stubs_attr);
 
     let res = quote! {
         #[kani::proof]
@@ -178,7 +177,7 @@ fn create_verify(
             let result = #mod_name::#function_name(#(#parameter_names),*);
 
             kani::assert(
-                result.is_err() || conc.to_ctx().accounts.__post_invariants(&dummy.accounts),
+                result.is_err() || conc.to_ctx().accounts.__post_invariants(&dummy),
                 "account invariant is not satisfied",
             );
 

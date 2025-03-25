@@ -13,6 +13,7 @@ otter-solana-macro = { path = "../macro" }
 thiserror = { workspace = true }
 solana-keccak-hasher = "=2.2.1"
 bytemuck = { workspace = true }
+dyn-clone = { workspace = true }
 
 [features]
 kani = ["dep:kani"]

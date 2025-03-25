@@ -181,8 +181,8 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
             };
 
             let transition_invariant = match (constraints.init.as_ref(), is_field_optional(field)) {
-                (None, true) => quote! { self.#ident.as_ref().map(|x| x.account_for_verification()._check_transition_invariant(old.#ident.as_ref().unwrap().account_for_verification())).unwrap_or(true) },
-                (None, false) => quote! { self.#ident.account_for_verification()._check_transition_invariant(old.#ident.account_for_verification()) },
+                (None, true) => quote! { self.#ident.as_ref().map(|x| x.account_for_verification()._check_transition_invariant(old.accounts.#ident.as_ref().unwrap().account_for_verification(), &old.remaining_accounts)).unwrap_or(true) },
+                (None, false) => quote! { self.#ident.account_for_verification()._check_transition_invariant(old.accounts.#ident.account_for_verification(), &old.remaining_accounts) },
                 _ => quote! { true }
             };
 
@@ -194,7 +194,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
     if post.is_empty() {
         quote! {
             impl #generics #ident #generics {
-                pub fn __post_invariants(&self, old: &Self) -> bool {
+                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) -> bool {
                     true
                 }
             }
@@ -202,7 +202,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
     } else {
         quote! {
             impl #generics #ident #generics {
-                pub fn __post_invariants(&self, old: &Self) -> bool {
+                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) -> bool {
                     #(#post)&&*
                 }
             }

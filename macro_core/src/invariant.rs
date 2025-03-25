@@ -39,7 +39,7 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             #item
 
             impl #ident {
-                pub fn _check_transition_invariant<T>(&self, old: T) -> bool
+                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) -> bool
                 where T: Deref<Target = Self>, {
                     #attr
                 }
@@ -49,7 +49,7 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             #item
 
             impl #ident {
-                pub fn _check_transition_invariant<T>(&self, old: T) -> bool
+                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) -> bool
                 where T: Deref<Target = Self>, {
                     true
                 }

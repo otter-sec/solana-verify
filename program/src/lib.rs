@@ -1,4 +1,5 @@
 #![feature(type_name_of_val)]
+#![feature(const_type_name)]
 
 pub mod account_info;
 pub mod borsh;

@@ -6,16 +6,33 @@ use otter_solana_program::{
     account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result, vec::fast::Vec
 };
 
-#[derive(Debug, Clone)]
+use std::marker::PhantomData;
+use std::cell::{Ref, RefMut, RefCell};
+
+#[derive(Debug)]
 #[cfg_attr(any(kani, feature = "kani"), derive(kani::Arbitrary))]
 pub struct Account<'info, T> {
-    pub account: T,
+    // pub account: T, NOTE: This is now kept in `info`
     pub info: AccountInfo<'info>,
+    pub phantom: PhantomData<T>,
 }
 
-impl<'a, T> Account<'a, T> {
+impl<'info, T> Clone for Account<'info, T> {
+    fn clone(&self) -> Self {
+        let mut info = self.info.clone();
+        info.clone_data();
+
+        Self {
+            info,
+            phantom: PhantomData
+        }
+    }
+}
+
+impl<'a, T: kani::Arbitrary + Clone + 'static> Account<'a, T> {
     pub fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
-        Self { info, account }
+        *info.as_account_mut::<T>() = account;
+        Self { info, phantom: PhantomData }
     }
 
     pub fn reload(&mut self) -> Result<()> {
@@ -23,24 +40,26 @@ impl<'a, T> Account<'a, T> {
         Ok(())
     }
 
-    pub fn into_inner(self) -> T {
-        self.account
-    }
-
     pub fn set_inner(&mut self, inner: T) {
-        self.account = inner;
+        *self.info.as_account_mut::<T>() = inner;
     }
 
     pub fn close(self, _info: AccountInfo<'_>) -> Result<()> {
         Ok(())
     }
 
-    pub fn account_for_verification(&self) -> &T {
-        &self.account
+    pub fn account_for_verification(&self) -> Ref<T> {
+        self.info.as_account::<T>()
     }
 }
 
-impl<'a, T: AnchorDeserialize + Owner> Account<'a, T> {
+impl <'a, T: Clone + kani::Arbitrary + Clone + 'static> Account<'a, T> {
+    pub fn into_inner(self) -> T {
+        self.info.as_account::<T>().clone()
+    }
+}
+
+impl<'a, T: AnchorDeserialize + Owner + kani::Arbitrary + Clone + 'static> Account<'a, T> {
     #[inline(never)]
     pub fn try_from(info: &AccountInfo<'a>) -> Result<Account<'a, T>> {
         if
@@ -76,34 +95,34 @@ impl<'info, T> ToAccountMetas for Account<'info, T> {
     }
 }
 
-impl<'info, T> ToAccountInfos<'info> for Account<'info, T> {
+impl<'info, T: kani::Arbitrary + Clone + 'static> ToAccountInfos<'info> for Account<'info, T> {
     fn to_account_infos(&self) -> Vec<AccountInfo<'info>> {
         vec![self.info].into()
     }
 }
 
-impl<'a, T> Deref for Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + 'static> Deref for Account<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.account
+        self.info.as_account_ref::<T>()
     }
 }
 
-impl<'a, T> AsRef<T> for Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + 'static> AsRef<T> for Account<'a, T> {
     fn as_ref(&self) -> &T {
-        &self.account
+        self.info.as_account_ref::<T>()
     }
 }
 
-impl<'a, T> DerefMut for Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + 'static> DerefMut for Account<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         #[cfg(feature = "anchor-debug")]
         if !self.info.is_writable {
             solana_program::msg!("The given Account is not mutable");
             panic!();
         }
-        &mut self.account
+        self.info.as_account_ref_mut::<T>()
     }
 }
 
@@ -148,7 +167,7 @@ impl<'info, T: ToAccountInfos<'info>> ToAccountInfos<'info> for Option<T> {
     }
 }
 
-impl<'info, T: AccountSerialize + AccountDeserialize + Clone> AsRef<AccountInfo<'info>>
+impl<'info, T: AccountSerialize + AccountDeserialize + Clone + 'static> AsRef<AccountInfo<'info>>
     for Account<'info, T>
 {
     fn as_ref(&self) -> &AccountInfo<'info> {

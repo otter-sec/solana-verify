@@ -36,8 +36,9 @@ pub struct ConcreteContext<'a, 'b, 'c, 'info, T: Bumps> {
     _c: PhantomData<&'c u8>,
 }
 
-pub struct DummyContext<T: Bumps + Clone> {
+pub struct DummyContext<'info, T: Bumps + Clone> {
     pub accounts: T,
+    pub remaining_accounts: Vec<AccountInfo<'info>>
 }
 
 impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
@@ -52,9 +53,16 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
 }
 
 impl <'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
-    pub fn clone_as_dummy(&'a self) -> DummyContext<T> {
+    pub fn clone_as_dummy(&'a self) -> DummyContext<'info, T> {
+        let mut remaining_accounts = self.remaining_accounts.clone();
+
+        remaining_accounts.iter_mut().for_each(|x| {
+            x.clone_data();
+        });
+
         DummyContext {
-            accounts: self.accounts.clone()
+            accounts: self.accounts.clone(),
+            remaining_accounts
         }
     }
 }

@@ -14,7 +14,7 @@ pub struct AccountLoader<'info, T: Owner> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary> AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> AccountLoader<'info, T> {
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
         Self { acc_info, phantom: PhantomData }
     }
@@ -65,7 +65,7 @@ impl<'info, T: Owner> Key for AccountLoader<'info, T> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary> kani::Arbitrary for AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> kani::Arbitrary for AccountLoader<'info, T> {
     fn any() -> Self {
         Self {
             acc_info: kani::any(),

@@ -33,6 +33,8 @@ pub mod vec {
 }
 pub mod address_lookup_table;
 
+pub mod verify_helpers;
+
 pub type Result<T> = core::result::Result<T, error::Error>;
 
 pub trait Key {

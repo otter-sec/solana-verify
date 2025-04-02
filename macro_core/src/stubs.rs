@@ -26,6 +26,15 @@ pub fn stubs_def(name: &Ident) -> TokenStream {
 
                 (quo, rem)
             }
+
+            fn cpi_set_stake_delegated(
+                accounts_ctx: &crate::handlers::RefreshObligationFarmsForReserveBase,
+                reserve: &crate::state::Reserve,
+                mode: crate::state::ReserveFarmKind,
+                amount: u64
+            ) -> Result<(), anchor_lang::Error> {
+                Ok(())
+            }
         }
     }
 }
@@ -37,5 +46,6 @@ pub fn stubs_attr(name: &Ident) -> TokenStream {
     let mod_name = stubs_mod_name(name);
     quote! {
         #[kani::stub(crate::utils::fraction::U256::div_mod, #mod_name::div_mod)]
+        #[kani::stub(crate::lending_market::farms_ixs::cpi_set_stake_delegated, #mod_name::cpi_set_stake_delegated)]
     }
 }

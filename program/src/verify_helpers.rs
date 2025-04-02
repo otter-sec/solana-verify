@@ -3,7 +3,7 @@ pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
     F: Fn(&T) -> bool
 {
-    for i in 0..=slice.len() {
+    for i in 0..slice.len() {
         if (predicate(&slice[i])) { return Some(i); }
     }
     None
@@ -14,7 +14,7 @@ where
     F: Fn(&T) -> bool
 {
     let mut res = true;
-    for i in 0..=slice.len() {
+    for i in 0..slice.len() {
         res &= predicate(&slice[i])
     }
     res

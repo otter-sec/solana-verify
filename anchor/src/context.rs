@@ -41,6 +41,15 @@ pub struct DummyContext<'info, T: Bumps + Clone> {
     pub remaining_accounts: Vec<AccountInfo<'info>>
 }
 
+impl<'info, T: Bumps + Clone> DummyContext<'info, T> {
+    pub fn new(accounts: T, remaining_accounts: Vec<AccountInfo<'info>>) -> Self {
+        Self {
+            accounts,
+            remaining_accounts
+        }
+    }
+}
+
 impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn to_ctx<'a>(&'a self) -> Context<'a, 'a, 'a, 'info, T> {
         Context {

@@ -1,5 +1,5 @@
 use anchor_syn::{
-    AccountField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser,
+    AccountField, CompositeField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser,
     codegen::accounts::{__client_accounts, __cpi_client_accounts, bumps, to_account_infos, to_account_metas},
     codegen::accounts::{generics, ParsedGenerics}};
 use anyhow::Result;
@@ -41,32 +41,23 @@ fn is_field_boxed(field: &Field) -> bool {
     account_ty.boxed
 }
 
-fn is_field_optional(field: &AccountField) -> bool {
-    let AccountField::Field(f) = &field else {
-        return false;
-    };
-
-    f.is_optional
-}
-
-fn get_valid_field(field: &AccountField) -> Option<&Field> {
-    let AccountField::Field(f) = &field else {
-        return None;
-    };
-    Some(f)
-}
-
-fn get_valid_constraints(field: &Field) -> Option<&ConstraintGroup> {
+fn get_primitive_constraints(field: &Field) -> Option<ConstraintGroup> {
     match field.ty {
-        Ty::Account(_) | Ty::AccountLoader(_) => Some(&field.constraints),
+        Ty::Account(_) | Ty::AccountLoader(_) => Some(field.constraints.clone()),
+        Ty::AccountInfo => Some(Default::default()),
         _ => None
     }
 }
 
-fn get_valid_ident_constraints(field: &AccountField) -> Option<(&Ident, &ConstraintGroup)> {
-    let field = get_valid_field(field)?;
-    let constraints = get_valid_constraints(field)?;
-    Some((&field.ident, constraints))
+fn get_composite_constraints(field: &CompositeField) -> Option<ConstraintGroup> {
+    Some(field.constraints.clone())
+}
+
+fn get_valid_ident_constraints(field: &AccountField) -> Option<(Ident, ConstraintGroup)> {
+    Some(match field {
+        AccountField::Field(field) => (field.ident.clone(), get_primitive_constraints(field)?),
+        AccountField::CompositeField(field) => (field.ident.clone(), get_composite_constraints(field)?)
+    })
 }
 
 fn create_constraints_checks(
@@ -78,18 +69,18 @@ fn create_constraints_checks(
     let mut fields = vec![];
 
     for field in val.fields.iter() {
-        let Some(f) = get_valid_field(field) else {
+        let AccountField::Field(f) = field else {
             continue;
         };
 
         fields.push(&f.ident);
 
-        let Some(constraints) = get_valid_constraints(f) else {
+        let Some(constraints) = get_primitive_constraints(f) else {
             continue;
         };
 
         for c in constraints.raw.iter() {
-            checks.push(&c.raw);
+            checks.push(c.raw.clone());
         }
 
         // TODO do has_one constraint here
@@ -128,15 +119,25 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
             if constraints.init.is_some() {
                 continue;
             } else {
-                let invariant = if is_field_optional(field) {
-                    quote! {
-                        self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
-                    }
-                } else {
-                    quote! {
-                        self.#ident.account_for_verification()._check_invariant()
+                let invariant = match field {
+                    AccountField::Field(f) => {
+                        if f.is_optional {
+                            quote! {
+                                self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
+                            }
+                        } else {
+                            quote! {
+                                self.#ident.account_for_verification()._check_invariant()
+                            }
+                        }
+                    },
+                    AccountField::CompositeField(f) => {
+                        quote! {
+                            self.#ident.__pre_invariants()
+                        }
                     }
                 };
+
                 pre.push(invariant);
             }
         }
@@ -170,20 +171,31 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
             if constraints.is_close() {
                 continue;
             }
-            let invariant = if is_field_optional(field) {
-                quote! {
-                    self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
-                }
-            } else {
-                quote! {
-                    self.#ident.account_for_verification()._check_invariant()
-                }
-            };
+            let (invariant, transition_invariant) = match field {
+                AccountField::Field(f) => {
+                    let invariant = if f.is_optional {
+                        quote! {
+                            self.#ident.as_ref().map(|x| x.account_for_verification()._check_invariant()).unwrap_or(true)
+                        }
+                    } else {
+                        quote! {
+                            self.#ident.account_for_verification()._check_invariant()
+                        }
+                    };
 
-            let transition_invariant = match (constraints.init.as_ref(), is_field_optional(field)) {
-                (None, true) => quote! { self.#ident.as_ref().map(|x| x.account_for_verification()._check_transition_invariant(old.accounts.#ident.as_ref().unwrap().account_for_verification(), &old.remaining_accounts)).unwrap_or(true) },
-                (None, false) => quote! { self.#ident.account_for_verification()._check_transition_invariant(old.accounts.#ident.account_for_verification(), &old.remaining_accounts) },
-                _ => quote! { true }
+                    let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
+                        (None, true) => quote! { self.#ident.as_ref().map(|x| x.account_for_verification()._check_transition_invariant(old.accounts.#ident.as_ref().unwrap().account_for_verification(), &old.remaining_accounts)).unwrap_or(true) },
+                        (None, false) => quote! { self.#ident.account_for_verification()._check_transition_invariant(old.accounts.#ident.account_for_verification(), &old.remaining_accounts) },
+                        _ => quote! { true }
+                    };
+
+                    (invariant, transition_invariant)
+                },
+                AccountField::CompositeField(f) => {
+                    (quote! {
+                        self.#ident.__post_invariants(&anchor_lang::context::DummyContext::new(old.accounts.#ident.clone(), old.remaining_accounts.to_vec()))
+                    }, quote! { true })
+                }
             };
 
             post.push(invariant);
@@ -306,6 +318,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let pre_invariant_impl = create_pre_invariants(&val);
     let post_invariant_impl = create_post_invariants(&val);
+    println!("post invariants for {} {}", ident, post_invariant_impl);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
     let client_accounts = __client_accounts::generate(&val);

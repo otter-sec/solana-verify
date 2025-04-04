@@ -1,4 +1,4 @@
-#![feature(type_name_of_val)]
+#![feature(trait_upcasting)]
 #![feature(const_type_name)]
 
 pub mod account_info;

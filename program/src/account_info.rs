@@ -12,18 +12,19 @@ use crate::error::Error;
 #[cfg(any(kani, feature = "kani"))]
 use crate::pubkey::kani_new_pubkey;
 
-use core::cell::{Ref, RefMut, RefCell};
-use std::rc::{Rc};
+use core::cell::{Ref, RefCell, RefMut};
+use std::rc::Rc;
 
 use std::any::{Any, TypeId};
 
 use dyn_clone::DynClone;
 
-pub trait AnyClone: DynClone + Any {
+pub trait AnyClone: DynClone + Any + shared::Invariant<AccountInfo<'static>> {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
-impl<T: Clone + 'static> AnyClone for T {
+
+impl<T: Clone + 'static + shared::Invariant<AccountInfo<'static>>> AnyClone for T {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -44,31 +45,60 @@ pub struct AccountInfo<'a> {
     pub executable: bool,
     pub rent_epoch: bool, //Epoch,
 
-    pub deserialized: *mut Option<RefCell<*mut dyn AnyClone>>
+    pub deserialized: *mut Option<RefCell<*mut dyn AnyClone>>,
+}
+
+impl shared::Invariant<Self> for AccountInfo<'static> {
+    fn check_invariant(&self) -> bool {
+        if let Some(deserialized) = unsafe { &*self.deserialized }.as_ref() {
+            let t = unsafe { &**deserialized.borrow() };
+            let i = t as &dyn shared::Invariant<_>;
+            i.check_invariant()
+        } else {
+            true
+        }
+    }
+
+    fn check_transition_invariant(&self, old: &dyn shared::Invariant<Self>, account_infos: &[Self]) -> bool {
+        if let Some(deserialized) = unsafe { &*self.deserialized }.as_ref() {
+            let t = unsafe { &**deserialized.borrow() };
+            let i = t as &dyn shared::Invariant<_>;
+            i.check_transition_invariant(old, account_infos)
+        } else {
+            true
+        }
+    }
 }
 
 impl<'a> AccountInfo<'a> {
-    pub fn as_account<T: kani::Arbitrary + Clone + 'static>(&self) -> Ref<T> {
+    pub fn as_account<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> Ref<T> {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.borrow() };
         assert!(t.as_any().is::<T>());
 
-        Ref::map(r.borrow(), |x| unsafe {&**x}.as_any().downcast_ref::<T>().unwrap())
+        Ref::map(r.borrow(), |x| {
+            unsafe { &**x }.as_any().downcast_ref::<T>().unwrap()
+        })
     }
 
-    pub fn as_account_mut<T: kani::Arbitrary + Clone + 'static>(&self) -> RefMut<T> {
+    pub fn as_account_mut<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> RefMut<T> {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.borrow() };
         assert!(t.as_any().is::<T>());
 
-        RefMut::map(r.borrow_mut(), |x| unsafe {&mut **x}.as_any_mut().downcast_mut::<T>().unwrap())
+        RefMut::map(r.borrow_mut(), |x| {
+            unsafe { &mut **x }
+                .as_any_mut()
+                .downcast_mut::<T>()
+                .unwrap()
+        })
     }
 
-    pub fn as_account_ref<T: kani::Arbitrary + Clone + 'static>(&self) -> &T {
+    pub fn as_account_ref<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> &T {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -76,17 +106,19 @@ impl<'a> AccountInfo<'a> {
         assert!(t.as_any().is::<T>());
 
         t.as_any().downcast_ref::<T>().unwrap()
-
     }
 
-    pub fn maybe_as_account<T: kani::Arbitrary + Clone + 'static>(&self) -> Option<&T> {
-        unsafe {  &mut *self.deserialized }.as_ref().map(|x| {
-            let t = unsafe { &**x.borrow() };
-            t.as_any().downcast_ref::<T>()
-        }).flatten()
+    pub fn maybe_as_account<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> Option<&T> {
+        unsafe { &mut *self.deserialized }
+            .as_ref()
+            .map(|x| {
+                let t = unsafe { &**x.borrow() };
+                t.as_any().downcast_ref::<T>()
+            })
+            .flatten()
     }
 
-    pub fn as_account_ref_mut<T: kani::Arbitrary + Clone + 'static>(&self) -> &mut T {
+    pub fn as_account_ref_mut<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> &mut T {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -96,14 +128,16 @@ impl<'a> AccountInfo<'a> {
         t.as_any_mut().downcast_mut::<T>().unwrap()
     }
 
-    pub fn init_as<T: Sized + kani::Arbitrary + Clone + 'static>(&self) {
-        let mut d = unsafe {  &mut *self.deserialized };
+    pub fn init_as<T: Sized + kani::Arbitrary + Clone + AnyClone + 'static>(&self) {
+        let mut d = unsafe { &mut *self.deserialized };
         if d.is_none() {
             let t: T = kani::any();
             *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
         }
     }
+}
 
+impl<'a> AccountInfo<'a> {
     pub fn signer_key(&self) -> Option<&Pubkey> {
         if self.is_signer {
             Some(self.key)
@@ -113,9 +147,10 @@ impl<'a> AccountInfo<'a> {
     }
 
     pub fn clone_data(&mut self) {
-        let mut d = unsafe {  &mut *self.deserialized };
+        let mut d = unsafe { &mut *self.deserialized };
         let inner = d.as_ref().map(|x| {
-            let cloned_t: &mut dyn AnyClone = Box::leak(dyn_clone::clone_box(unsafe { &*x }));
+            let ptr = *x.borrow();
+            let cloned_t: &mut dyn AnyClone = Box::leak(dyn_clone::clone_box(unsafe { &*ptr }));
             RefCell::new(cloned_t as *mut _)
         });
         self.deserialized = Box::leak(Box::new(inner)) as *mut _
@@ -148,7 +183,6 @@ impl<'a> AccountInfo<'a> {
     pub fn try_data_is_empty(&self) -> std::result::Result<bool, BorrowError> {
         Ok(self.data.borrow().is_empty())
     }
-
 
     pub fn try_borrow_data(&self) -> Result<&[u8]> {
         Ok(&self.data)
@@ -228,7 +262,7 @@ impl<'info> kani::Arbitrary for AccountInfo<'info> {
             owner: kani_new_pubkey(),
             executable: kani::any(),
             rent_epoch: kani::any(),
-            deserialized: Box::leak(Box::new(None)) as *mut _
+            deserialized: Box::leak(Box::new(None)) as *mut _,
         }
     }
 }
@@ -244,7 +278,7 @@ impl Default for AccountInfo<'_> {
             owner: unsafe { KEYS.get(0).unwrap() },
             executable: bool::default(),
             rent_epoch: bool::default(),
-            deserialized: Box::leak(Box::new(None)) as *mut _
+            deserialized: Box::leak(Box::new(None)) as *mut _,
         }
     }
 }
@@ -263,7 +297,7 @@ impl<'info> kani::Arbitrary for &'info AccountInfo<'info> {
             owner: kani_new_pubkey(),
             executable: kani::any(),
             rent_epoch: kani::any(),
-            deserialized: Box::leak(Box::new(None)) as *mut _
+            deserialized: Box::leak(Box::new(None)) as *mut _,
         };
 
         // Leak the account to extend its lifetime

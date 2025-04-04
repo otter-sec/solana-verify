@@ -103,7 +103,7 @@ fn create_succeeds_if(
             for _ in 0..#MAX_UNPACK {
                 let x = kani::any();
                 #t_lower_plural.push(x);
-                kani::assume(x._check_invariant());
+                kani::assume(x.check_invariant());
             }
         });
 
@@ -200,7 +200,7 @@ fn create_verify(
             for _ in 0..#MAX_UNPACK {
                 let x = kani::any();
                 #t_lower_plural.push(x);
-                kani::assume(x._check_invariant());
+                kani::assume(x.check_invariant());
             }
         });
 

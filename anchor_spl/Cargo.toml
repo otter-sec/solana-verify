@@ -9,6 +9,7 @@ onchor = { path = "../anchor" }
 borsh = { workspace = true }
 num_enum = { workspace = true }
 bytemuck = { workspace = true }
+shared = { version = "0.1.0", path = "../shared" }
 
 [features]
 default = []

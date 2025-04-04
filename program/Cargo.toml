@@ -14,6 +14,7 @@ thiserror = { workspace = true }
 solana-keccak-hasher = "=2.2.1"
 bytemuck = { workspace = true }
 dyn-clone = { workspace = true }
+shared = { version = "0.1.0", path = "../shared" }
 
 [features]
 kani = ["dep:kani"]

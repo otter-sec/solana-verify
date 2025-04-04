@@ -11,6 +11,7 @@ otter-solana-macro = { path = "../macro", features = ["anchor"] }
 otter-solana-program = { path = "../program" }
 thiserror = { workspace = true }
 bytemuck = { workspace = true }
+shared = { version = "0.1.0", path = "../shared" }
 
 [features]
 default = []

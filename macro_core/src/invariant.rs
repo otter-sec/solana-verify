@@ -11,17 +11,25 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
         Ok(attr) => quote! {
             #item
 
-            impl #ident {
-                pub fn _check_invariant(&self) -> bool {
+            impl ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>> for #ident {
+                fn check_invariant(&self) -> bool {
                     #attr
+                }
+
+                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) -> bool {
+                    todo!()
                 }
             }
         },
         Err(_) => quote! {
             #item
 
-            impl #ident {
-                pub fn _check_invariant(&self) -> bool {
+            impl::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>> for #ident {
+                fn check_invariant(&self) -> bool {
+                    true
+                }
+
+                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) -> bool {
                     true
                 }
             }

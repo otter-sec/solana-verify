@@ -1,8 +1,9 @@
-use std::marker::PhantomData;
+use std::{any::Any, marker::PhantomData};
 
-use otter_solana_program::pubkey::Pubkey;
+use otter_solana_program::{account_info::AnyClone, pubkey::Pubkey};
 pub use otter_solana_program::Key;
 use otter_solana_program::{account_info::AccountInfo, error::Error, Result};
+use shared::Invariant;
 
 use crate::{Owner, ToAccountInfo, ToAccountMetas, AccountMeta, ToAccountInfos, prelude::FastVec};
 use core::cell::{Ref, RefMut, RefCell};
@@ -14,7 +15,7 @@ pub struct AccountLoader<'info, T: Owner> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary + AnyClone + Clone + 'static> AccountLoader<'info, T> {
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
         Self { acc_info, phantom: PhantomData }
     }
@@ -55,6 +56,16 @@ impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> AccountLoader<'info, T
 
     pub fn account_for_verification(&self) -> Ref<T> {
         self.acc_info.as_account::<T>()
+    }
+}
+
+impl<T: Invariant<AccountInfo<'static>> + Owner + AnyClone + Clone + kani::Arbitrary + 'static> Invariant<AccountInfo<'static>> for AccountLoader<'static, T> {
+    fn check_invariant(&self) -> bool {
+        self.acc_info.as_account::<T>().check_invariant()
+    }
+
+    fn check_transition_invariant(&self, old: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) -> bool {
+        self.acc_info.as_account::<T>().check_transition_invariant(old, remaining)
     }
 }
 

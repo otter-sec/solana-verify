@@ -3,7 +3,6 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{prelude::AnchorDeserialize, ToAccountInfos, ToAccountMetas, AccountSerialize, AccountDeserialize};
 use crate::{Owner, ToAccountInfo};
-use otter_solana_program::account_info::AnyClone;
 use otter_solana_program::{
     account_info::AccountInfo, error::Error, instruction::AccountMeta, pubkey::Pubkey, Key, Result, vec::fast::Vec
 };
@@ -32,7 +31,7 @@ impl<'info, T> Clone for Account<'info, T> {
     }
 }
 
-impl<'a, T: kani::Arbitrary + Clone + AnyClone + 'static> Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static> Account<'a, T> {
     pub fn new(info: AccountInfo<'a>, account: T) -> Account<'a, T> {
         *info.as_account_mut::<T>() = account;
         Self { info, phantom: PhantomData }
@@ -57,22 +56,30 @@ impl<'a, T: kani::Arbitrary + Clone + AnyClone + 'static> Account<'a, T> {
 }
 
 impl<T: Invariant<AccountInfo<'static>> + kani::Arbitrary + Clone + 'static> Invariant<AccountInfo<'static>> for Account<'static, T> {
-    fn check_invariant(&self) -> bool {
+    fn as_any(&self) -> &dyn Any {
+        self as _
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self as _
+    }
+
+    fn check_invariant(&self) {
         self.info.as_account::<T>().check_invariant()
     }
 
-    fn check_transition_invariant(&self, other: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) -> bool {
+    fn check_transition_invariant(&self, other: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
         self.info.as_account::<T>().check_transition_invariant(other, remaining)
     }
 }
 
-impl <'a, T: Clone + kani::Arbitrary + AnyClone + Clone + 'static> Account<'a, T> {
+impl <'a, T: Clone + kani::Arbitrary + shared::Invariant<AccountInfo<'static>> + Clone + 'static> Account<'a, T> {
     pub fn into_inner(self) -> T {
         self.info.as_account::<T>().clone()
     }
 }
 
-impl<'a, T: AnchorDeserialize + Owner + kani::Arbitrary + AnyClone + Clone + 'static> Account<'a, T> {
+impl<'a, T: AnchorDeserialize + Owner + kani::Arbitrary + shared::Invariant<AccountInfo<'static>> + Clone + 'static> Account<'a, T> {
     #[inline(never)]
     pub fn try_from(info: &AccountInfo<'a>) -> Result<Account<'a, T>> {
         if
@@ -114,7 +121,7 @@ impl<'info, T: kani::Arbitrary + Clone + 'static> ToAccountInfos<'info> for Acco
     }
 }
 
-impl<'a, T: kani::Arbitrary + Clone + AnyClone + 'static> Deref for Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static> Deref for Account<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -122,7 +129,7 @@ impl<'a, T: kani::Arbitrary + Clone + AnyClone + 'static> Deref for Account<'a, 
     }
 }
 
-impl<'a, T: kani::Arbitrary + Clone + AnyClone + 'static> AsRef<T> for Account<'a, T> {
+impl<'a, T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static> AsRef<T> for Account<'a, T> {
     fn as_ref(&self) -> &T {
         self.info.as_account_ref::<T>()
     }

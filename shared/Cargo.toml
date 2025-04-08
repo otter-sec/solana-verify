@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 any_ref = "0.2.1"
+dyn-clone.workspace = true

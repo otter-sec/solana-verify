@@ -614,6 +614,7 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "any_ref",
+ "dyn-clone",
 ]
 
 [[package]]

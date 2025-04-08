@@ -173,18 +173,20 @@ fn create_verify(
 
             let ctx = conc.to_ctx();
 
-            kani::assume(conc.to_ctx().accounts.__pre_invariants());
+            // FIXME: Refactor to work with `assume`
+            // conc.to_ctx().accounts.__pre_invariants();
             let result = #mod_name::#function_name(#(#parameter_names),*);
 
-            kani::assert(
-                result.is_err() || conc.to_ctx().accounts.__post_invariants(&dummy),
-                "account invariant is not satisfied",
-            );
+            if !result.is_err() {
+                conc.to_ctx().accounts.__post_invariants(&dummy)
+            }
 
             let before = &dummy.accounts;
             let after = conc.to_ctx().accounts;
 
-            assert!(result.is_err() || #postcondition);
+            if !result.is_err() {
+                kani::assert(#postcondition, concat!("Fail C: ", stringify!(#postcondition)));
+            }
         }
     };
     Ok(res)

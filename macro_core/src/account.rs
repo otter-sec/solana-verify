@@ -123,17 +123,17 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
                     AccountField::Field(f) => {
                         if f.is_optional {
                             quote! {
-                                self.#ident.as_ref().map(|x| x.check_invariant()).unwrap_or(true)
+                                self.#ident.as_ref().map(|x| x.check_invariant())
                             }
                         } else {
                             quote! {
-                                self.#ident.check_invariant()
+                                slf.#ident.check_invariant()
                             }
                         }
                     },
                     AccountField::CompositeField(f) => {
                         quote! {
-                            self.#ident.__pre_invariants()
+                            slf.#ident.__pre_invariants()
                         }
                     }
                 };
@@ -146,20 +146,20 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
     if pre.is_empty() {
         quote! {
             impl #generics #ident #generics {
-                pub fn __pre_invariants(&self) -> bool {
-                    true
+                pub fn __pre_invariants(&self) {
                 }
             }
         }
     } else {
         quote! {
             impl #generics #ident #generics {
-                pub fn __pre_invariants(&self) -> bool
+                pub fn __pre_invariants(&self)
                 where Self: 'static {
                     use shared::Invariant;
                     let slf
                     : &'static Self = unsafe { std::mem::transmute(self) };
-                    #(#pre)&&*
+                    #(#pre);*
+                    ;
                 }
             }
         }
@@ -179,18 +179,18 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
                 AccountField::Field(f) => {
                     let invariant = if f.is_optional {
                         quote! {
-                            slf.#ident.as_ref().map(|x| x.check_invariant()).unwrap_or(true)
+                            slf.#ident.as_ref().map(|x| x.check_invariant())
                         }
                     } else {
                         quote! {
-                            slf.#ident.check_invariant()
+                            slf.#ident.check_invariant();
                         }
                     };
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
-                        (None, true) => quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap() as _, &old.remaining_accounts)).unwrap_or(true) },
-                        (None, false) => quote! { slf.#ident.check_transition_invariant(&old.accounts.#ident as _, &old.remaining_accounts) },
-                        _ => quote! { true }
+                        (None, true) => quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap() as _, &remaining_accounts)) },
+                        (None, false) => quote! { slf.#ident.check_transition_invariant(&old.accounts.#ident as _, &remaining_accounts) },
+                        _ => quote! { }
                     };
 
                     (invariant, transition_invariant)
@@ -198,7 +198,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
                 AccountField::CompositeField(f) => {
                     (quote! {
                         slf.#ident.__post_invariants(&anchor_lang::context::DummyContext::new(old.accounts.#ident.clone(), old.remaining_accounts.to_vec()))
-                    }, quote! { true })
+                    }, quote! { () })
                 }
             };
 
@@ -211,8 +211,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
         quote! {
             impl #generics #ident #generics
             where Self: 'static  {
-                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) -> bool {
-                    true
+                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
                 }
             }
         }
@@ -220,16 +219,20 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
         quote! {
             impl #generics #ident #generics
             where Self: 'static {
-                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) -> bool {
+                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
                     use shared::Invariant;
                     // SAFETY: Nah
                     let slf: &'static Self = unsafe {
                         std::mem::transmute(self)
-                    };                    
+                    };
                     let old: &'static anchor_lang::context::DummyContext<Self> = unsafe {
                         std::mem::transmute(old)
                     };
-                    #(#post)&&*
+                    let remaining_accounts: &'static [AccountInfo<'static>] = unsafe {
+                        std::mem::transmute(old.remaining_accounts.as_slice())
+                    };
+                    #(#post);*
+                    ;
                 }
             }
         }

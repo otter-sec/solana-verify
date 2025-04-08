@@ -12,12 +12,20 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             #item
 
             impl ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>> for #ident {
-                fn check_invariant(&self) -> bool {
-                    #attr
+                fn as_any(&self) -> &dyn std::any::Any {
+                    self as _
                 }
 
-                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) -> bool {
-                    todo!()
+                fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                    self as _
+                }
+
+                fn check_invariant(&self) {
+                    kani::assert(#attr, concat!("fail A: ", stringify!(#attr)))
+                }
+
+                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) {
+                    kani::assert(#attr, concat!("fail D: ", stringify!(#attr)))
                 }
             }
         },
@@ -25,13 +33,17 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             #item
 
             impl::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>> for #ident {
-                fn check_invariant(&self) -> bool {
-                    true
+                fn as_any(&self) -> &dyn std::any::Any {
+                    self as _
                 }
 
-                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) -> bool {
-                    true
+                fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                    self as _
                 }
+
+                fn check_invariant(&self) {}
+
+                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) {}
             }
         },
     };
@@ -47,9 +59,9 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             #item
 
             impl #ident {
-                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) -> bool
+                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo])
                 where T: Deref<Target = Self>, {
-                    #attr
+                    kani::assert(#attr, concat!("Fail B: ", stringify!(#attr)))
                 }
             }
         },
@@ -57,10 +69,8 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             #item
 
             impl #ident {
-                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) -> bool
-                where T: Deref<Target = Self>, {
-                    true
-                }
+                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo])
+                where T: Deref<Target = Self>, {}
             }
         },
     };

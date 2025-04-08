@@ -1,6 +1,6 @@
 use std::{any::Any, marker::PhantomData};
 
-use otter_solana_program::{account_info::AnyClone, pubkey::Pubkey};
+use otter_solana_program::pubkey::Pubkey;
 pub use otter_solana_program::Key;
 use otter_solana_program::{account_info::AccountInfo, error::Error, Result};
 use shared::Invariant;
@@ -15,7 +15,7 @@ pub struct AccountLoader<'info, T: Owner> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary + AnyClone + Clone + 'static> AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary + shared::Invariant<AccountInfo<'static>> + Clone + 'static> AccountLoader<'info, T> {
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
         Self { acc_info, phantom: PhantomData }
     }
@@ -59,12 +59,20 @@ impl<'info, T: Owner + kani::Arbitrary + AnyClone + Clone + 'static> AccountLoad
     }
 }
 
-impl<T: Invariant<AccountInfo<'static>> + Owner + AnyClone + Clone + kani::Arbitrary + 'static> Invariant<AccountInfo<'static>> for AccountLoader<'static, T> {
-    fn check_invariant(&self) -> bool {
+impl<T: Invariant<AccountInfo<'static>> + Owner + shared::Invariant<AccountInfo<'static>> + Clone + kani::Arbitrary + 'static> Invariant<AccountInfo<'static>> for AccountLoader<'static, T> {
+    fn as_any(&self) -> &dyn Any {
+        self as _
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self as _
+    }
+
+    fn check_invariant(&self) {
         self.acc_info.as_account::<T>().check_invariant()
     }
 
-    fn check_transition_invariant(&self, old: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) -> bool {
+    fn check_transition_invariant(&self, old: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
         self.acc_info.as_account::<T>().check_transition_invariant(old, remaining)
     }
 }

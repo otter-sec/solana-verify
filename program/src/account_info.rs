@@ -19,21 +19,6 @@ use std::any::{Any, TypeId};
 
 use dyn_clone::DynClone;
 
-pub trait AnyClone: DynClone + Any + shared::Invariant<AccountInfo<'static>> {
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-}
-
-impl<T: Clone + 'static + shared::Invariant<AccountInfo<'static>>> AnyClone for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub struct AccountInfo<'a> {
     pub key: &'a Pubkey,
@@ -45,33 +30,35 @@ pub struct AccountInfo<'a> {
     pub executable: bool,
     pub rent_epoch: bool, //Epoch,
 
-    pub deserialized: *mut Option<RefCell<*mut dyn AnyClone>>,
+    pub deserialized: *mut Option<RefCell<*mut dyn shared::Invariant<AccountInfo<'static>>>>,
 }
 
-impl shared::Invariant<Self> for AccountInfo<'static> {
-    fn check_invariant(&self) -> bool {
-        if let Some(deserialized) = unsafe { &*self.deserialized }.as_ref() {
-            let t = unsafe { &**deserialized.borrow() };
-            let i = t as &dyn shared::Invariant<_>;
-            i.check_invariant()
-        } else {
-            true
-        }
+impl AccountInfo<'static> {
+    pub fn check_invariant(&self) -> Option<()> {
+        let slf: &'static AccountInfo<'static> = unsafe {
+            std::mem::transmute(self)
+        };
+        slf.get_dyn()?.check_invariant();
+        Some(())
     }
 
-    fn check_transition_invariant(&self, old: &dyn shared::Invariant<Self>, account_infos: &[Self]) -> bool {
-        if let Some(deserialized) = unsafe { &*self.deserialized }.as_ref() {
-            let t = unsafe { &**deserialized.borrow() };
-            let i = t as &dyn shared::Invariant<_>;
-            i.check_transition_invariant(old, account_infos)
-        } else {
-            true
-        }
+    pub fn check_transition_invariant(&self, old: &Self, account_infos: &[Self]) -> Option<()>  {
+        let a = self.get_dyn()?;
+        let b = old.get_dyn()?;
+        kani::assert(a.type_id() == b.type_id(), "old and new are different types");
+        a.check_transition_invariant(b, account_infos);
+        Some(())
+    }
+
+    fn get_dyn(&self) -> Option<&'static dyn shared::Invariant<AccountInfo<'static>>> {
+        let deserialized = unsafe { &*self.deserialized }.as_ref()?;
+        let t = unsafe { &**deserialized.try_borrow().ok()? };
+        Some(t as &dyn shared::Invariant<_>)
     }
 }
 
 impl<'a> AccountInfo<'a> {
-    pub fn as_account<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> Ref<T> {
+    pub fn as_account<T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) -> Ref<T> {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -83,7 +70,7 @@ impl<'a> AccountInfo<'a> {
         })
     }
 
-    pub fn as_account_mut<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> RefMut<T> {
+    pub fn as_account_mut<T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) -> RefMut<T> {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -98,7 +85,7 @@ impl<'a> AccountInfo<'a> {
         })
     }
 
-    pub fn as_account_ref<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> &T {
+    pub fn as_account_ref<T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) -> &T {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -108,7 +95,7 @@ impl<'a> AccountInfo<'a> {
         t.as_any().downcast_ref::<T>().unwrap()
     }
 
-    pub fn maybe_as_account<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> Option<&T> {
+    pub fn maybe_as_account<T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) -> Option<&T> {
         unsafe { &mut *self.deserialized }
             .as_ref()
             .map(|x| {
@@ -118,7 +105,7 @@ impl<'a> AccountInfo<'a> {
             .flatten()
     }
 
-    pub fn as_account_ref_mut<T: kani::Arbitrary + Clone + AnyClone + 'static>(&self) -> &mut T {
+    pub fn as_account_ref_mut<T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) -> &mut T {
         self.init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -128,7 +115,7 @@ impl<'a> AccountInfo<'a> {
         t.as_any_mut().downcast_mut::<T>().unwrap()
     }
 
-    pub fn init_as<T: Sized + kani::Arbitrary + Clone + AnyClone + 'static>(&self) {
+    pub fn init_as<T: Sized + kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static>(&self) {
         let mut d = unsafe { &mut *self.deserialized };
         if d.is_none() {
             let t: T = kani::any();
@@ -150,7 +137,7 @@ impl<'a> AccountInfo<'a> {
         let mut d = unsafe { &mut *self.deserialized };
         let inner = d.as_ref().map(|x| {
             let ptr = *x.borrow();
-            let cloned_t: &mut dyn AnyClone = Box::leak(dyn_clone::clone_box(unsafe { &*ptr }));
+            let cloned_t: &mut dyn shared::Invariant<AccountInfo<'static>> = Box::leak(dyn_clone::clone_box(unsafe { &*ptr }));
             RefCell::new(cloned_t as *mut _)
         });
         self.deserialized = Box::leak(Box::new(inner)) as *mut _

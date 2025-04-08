@@ -424,11 +424,11 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
         item.attrs.iter().any(|x| x.path.is_ident("transition_invariant"))
     ) {
         (false, false) => quote! {
-            #[anchor_lang::prelude::invariant()]
-            #[anchor_lang::prelude::transition_invariant()]
+            #[anchor_lang::prelude::invariant(true)]
+            #[anchor_lang::prelude::transition_invariant(true)]
         },
-        (true, false) => quote! { #[anchor_lang::prelude::transition_invariant()] },
-        (false, true) => quote! { #[anchor_lang::prelude::invariant()] },
+        (true, false) => quote! { #[anchor_lang::prelude::transition_invariant(true)] },
+        (false, true) => quote! { #[anchor_lang::prelude::invariant(true)] },
         _ => quote! {},
     };
 

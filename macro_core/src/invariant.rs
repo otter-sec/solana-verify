@@ -21,31 +21,16 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                 }
 
                 fn check_invariant(&self) {
-                    kani::assert(#attr, concat!("fail A: ", stringify!(#attr)))
+                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), "invariant ", stringify!(#attr)));
                 }
 
-                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) {
-                    kani::assert(#attr, concat!("fail D: ", stringify!(#attr)))
+                fn check_transition_invariant(&self, other: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) {
+                    let before = other.as_any().downcast_ref::<#ident>().unwrap();
+                    self._check_transition_invariant(before, remaining_accounts);
                 }
             }
         },
-        Err(_) => quote! {
-            #item
-
-            impl::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>> for #ident {
-                fn as_any(&self) -> &dyn std::any::Any {
-                    self as _
-                }
-
-                fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-                    self as _
-                }
-
-                fn check_invariant(&self) {}
-
-                fn check_transition_invariant(&self, _: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, _: &[anchor_lang::prelude::AccountInfo]) {}
-            }
-        },
+        Err(e) => { panic!("Error parsing invariant {:?}", e) },
     };
     Ok(res)
 }
@@ -61,18 +46,11 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             impl #ident {
                 pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo])
                 where T: Deref<Target = Self>, {
-                    kani::assert(#attr, concat!("Fail B: ", stringify!(#attr)))
+                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), "transition invariant ", stringify!(#attr)));
                 }
             }
         },
-        Err(_) => quote! {
-            #item
-
-            impl #ident {
-                pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo])
-                where T: Deref<Target = Self>, {}
-            }
-        },
+        Err(e) => {  panic!("Error parsing transition invariant: {:?}", e) },
     };
     Ok(res)
 }

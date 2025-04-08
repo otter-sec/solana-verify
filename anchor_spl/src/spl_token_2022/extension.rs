@@ -133,7 +133,7 @@ impl<'data, S: BaseState + kani::Arbitrary> StateWithExtensions<'data, S> {
         let base = S::any();
 
         // let tlv_data = unpack_tlv_data::<S>(rest)?;
-        Ok(Self { base, tlv_data: unsafe { std::slice::from_raw_parts(std::ptr::null(), 0) } })
+        Ok(Self { base, tlv_data: unsafe { std::slice::from_raw_parts(std::ptr::NonNull::dangling().as_ptr(), 0) } })
     }
 
     pub fn get_extension<V: kani::Arbitrary>(&self) -> Result<&V, ProgramError> {

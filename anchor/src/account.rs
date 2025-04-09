@@ -53,22 +53,20 @@ impl<'a, T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 
     pub fn account_for_verification(&self) -> Ref<T> {
         self.info.as_account::<T>()
     }
+
+    pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {
+        let acc: &T = &*self.account_for_verification();
+        // SAFETY: I promise I won't do anything bad with this reference!
+        unsafe { std::mem::transmute(acc as &dyn shared::Invariant<AccountInfo<'_>>) }
+    }
 }
 
-impl<T: Invariant<AccountInfo<'static>> + kani::Arbitrary + Clone + 'static> Invariant<AccountInfo<'static>> for Account<'static, T> {
-    fn as_any(&self) -> &dyn Any {
-        self as _
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self as _
-    }
-
+impl<T: Invariant<AccountInfo<'static>> + kani::Arbitrary + Clone + 'static> Account<'static, T> {
     fn check_invariant(&self) {
         self.info.as_account::<T>().check_invariant()
     }
 
-    fn check_transition_invariant(&self, other: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
+    fn check_transition_invariant(&self, other: &dyn shared::Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
         self.info.as_account::<T>().check_transition_invariant(other, remaining)
     }
 }

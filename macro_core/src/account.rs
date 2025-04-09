@@ -188,8 +188,8 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
                     };
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
-                        (None, true) => quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap() as _, &remaining_accounts)) },
-                        (None, false) => quote! { slf.#ident.check_transition_invariant(&old.accounts.#ident as _, &remaining_accounts) },
+                        (None, true) => quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap().as_invariant(), &remaining_accounts)) },
+                        (None, false) => quote! { slf.#ident.check_transition_invariant(old.accounts.#ident.as_invariant(), &remaining_accounts) },
                         _ => quote! { }
                     };
 

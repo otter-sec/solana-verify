@@ -5,8 +5,8 @@ pub use otter_solana_program::Key;
 use otter_solana_program::{account_info::AccountInfo, error::Error, Result};
 use shared::Invariant;
 
-use crate::{Owner, ToAccountInfo, ToAccountMetas, AccountMeta, ToAccountInfos, prelude::FastVec};
-use core::cell::{Ref, RefMut, RefCell};
+use crate::{prelude::FastVec, AccountMeta, Owner, ToAccountInfo, ToAccountInfos, ToAccountMetas};
+use core::cell::{Ref, RefCell, RefMut};
 
 #[derive(Clone)]
 pub struct AccountLoader<'info, T: Owner> {
@@ -15,12 +15,19 @@ pub struct AccountLoader<'info, T: Owner> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary + shared::Invariant<AccountInfo<'static>> + Clone + 'static> AccountLoader<'info, T> {
+impl<
+        'info,
+        T: Owner + kani::Arbitrary + shared::Invariant<AccountInfo<'static>> + Clone + 'static,
+    > AccountLoader<'info, T>
+{
     pub fn new(acc_info: &'info AccountInfo<'info>) -> Self {
-        Self { acc_info, phantom: PhantomData }
+        Self {
+            acc_info,
+            phantom: PhantomData,
+        }
     }
 
-     #[inline(never)]
+    #[inline(never)]
     pub fn try_from(acc_info: &'info AccountInfo<'info>) -> Result<AccountLoader<'info, T>> {
         if acc_info.owner != &T::owner() {
             return Err(Error::Generic);
@@ -57,23 +64,25 @@ impl<'info, T: Owner + kani::Arbitrary + shared::Invariant<AccountInfo<'static>>
     pub fn account_for_verification(&self) -> Ref<T> {
         self.acc_info.as_account::<T>()
     }
+
+    pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {
+        let acc: &T = &*self.account_for_verification();
+        // SAFETY: I promise I won't do anything bad with this reference!
+        unsafe { std::mem::transmute(acc as &dyn shared::Invariant<AccountInfo<'_>>) }
+    }
 }
 
-impl<T: Invariant<AccountInfo<'static>> + Owner + shared::Invariant<AccountInfo<'static>> + Clone + kani::Arbitrary + 'static> Invariant<AccountInfo<'static>> for AccountLoader<'static, T> {
-    fn as_any(&self) -> &dyn Any {
-        self as _
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self as _
-    }
-
-    fn check_invariant(&self) {
+impl<T: Invariant<AccountInfo<'static>> + kani::Arbitrary + Clone + Owner + 'static>
+    AccountLoader<'static, T>
+{
+    pub fn check_invariant(&self) {
         self.acc_info.as_account::<T>().check_invariant()
     }
 
-    fn check_transition_invariant(&self, old: &dyn Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
-        self.acc_info.as_account::<T>().check_transition_invariant(old, remaining)
+    pub fn check_transition_invariant(&self, other: &dyn shared::Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
+        self.acc_info
+            .as_account::<T>()
+            .check_transition_invariant(other, remaining)
     }
 }
 
@@ -84,15 +93,16 @@ impl<'info, T: Owner> Key for AccountLoader<'info, T> {
 }
 
 #[cfg(any(kani, feature = "kani"))]
-impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> kani::Arbitrary for AccountLoader<'info, T> {
+impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> kani::Arbitrary
+    for AccountLoader<'info, T>
+{
     fn any() -> Self {
         Self {
             acc_info: kani::any(),
-            phantom: PhantomData
+            phantom: PhantomData,
         }
     }
 }
-
 
 impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
     fn to_account_info(&self) -> AccountInfo<'info> {
@@ -106,7 +116,7 @@ impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
             owner: self.acc_info.owner,
             executable: self.acc_info.executable,
             rent_epoch: self.acc_info.rent_epoch,
-            deserialized: self.acc_info.deserialized
+            deserialized: self.acc_info.deserialized,
         }
     }
 }

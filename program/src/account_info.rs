@@ -151,6 +151,12 @@ impl<'a> AccountInfo<'a> {
             *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
         }
     }
+
+    pub fn is_initialized(&self) -> bool {
+        unsafe {
+            (*self.deserialized).is_some()
+        }
+    }
 }
 
 impl<'a> AccountInfo<'a> {

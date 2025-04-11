@@ -188,18 +188,23 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
                     };
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
-                        (None, true) => quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap().as_invariant(), &remaining_accounts)) },
-                        (None, false) => quote! { slf.#ident.check_transition_invariant(old.accounts.#ident.as_invariant(), &remaining_accounts) },
-                        _ => quote! { }
+                        (None, true) => {
+                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap().as_invariant(), &remaining_accounts)) }
+                        }
+                        (None, false) => {
+                            quote! { slf.#ident.check_transition_invariant(old.accounts.#ident.as_invariant(), &remaining_accounts) }
+                        }
+                        _ => quote! {},
                     };
 
                     (invariant, transition_invariant)
-                },
-                AccountField::CompositeField(f) => {
-                    (quote! {
-                        slf.#ident.__post_invariants(&anchor_lang::context::DummyContext::new(old.accounts.#ident.clone(), old.remaining_accounts.to_vec()))
-                    }, quote! { () })
                 }
+                AccountField::CompositeField(_) => (
+                    quote! {
+                        slf.#ident.__post_invariants(&anchor_lang::context::DummyContext::new(old.accounts.#ident.clone(), old.remaining_accounts.to_vec()))
+                    },
+                    quote! { () },
+                ),
             };
 
             post.push(invariant);
@@ -207,11 +212,19 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
         }
     }
 
+    let assert_initialized = quote! {
+        kani::assert(
+            crate::solana_program::verify_helpers::slice_all(&old.remaining_accounts, |acc| acc.is_initialized()),
+            "all accounts must be initialized"
+        );
+    };
+
     if post.is_empty() {
         quote! {
             impl #generics #ident #generics
             where Self: 'static  {
                 pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
+                    #assert_initialized
                 }
             }
         }
@@ -220,6 +233,7 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
             impl #generics #ident #generics
             where Self: 'static {
                 pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
+                    #assert_initialized;
                     use shared::Invariant;
                     // SAFETY: Nah
                     let slf: &'static Self = unsafe {
@@ -421,7 +435,9 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
 
     let invariant = match (
         item.attrs.iter().any(|x| x.path.is_ident("invariant")),
-        item.attrs.iter().any(|x| x.path.is_ident("transition_invariant"))
+        item.attrs
+            .iter()
+            .any(|x| x.path.is_ident("transition_invariant")),
     ) {
         (false, false) => quote! {
             #[anchor_lang::prelude::invariant(true)]

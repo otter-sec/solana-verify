@@ -28,3 +28,12 @@ where
     }
     res
 }
+
+pub fn slice_for_each_mut<T, F>(slice: &mut [T], f: F)
+where
+    F: Fn(&mut T),
+{
+    for i in 0..slice.len() {
+        f(&mut slice[i]);
+    }
+}

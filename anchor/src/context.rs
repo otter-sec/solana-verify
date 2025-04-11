@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use otter_solana_program::{account_info::AccountInfo, pubkey::Pubkey, vec::fast::Vec, instruction::AccountMeta};
+use otter_solana_program::{account_info::AccountInfo, instruction::AccountMeta, pubkey::Pubkey, vec::fast::Vec, verify_helpers::slice_for_each_mut};
 use std::fmt::Debug;
 
 use crate::{ToAccountInfos, ToAccountMetas};
@@ -56,22 +56,20 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
             program_id: &self.program_id,
             accounts: unsafe { (&self.accounts as *const T as *mut T).as_mut().unwrap() },
             remaining_accounts: &self.remaining_accounts,
-            bumps: T::Bumps::default()
+            bumps: T::Bumps::default(),
         }
     }
 }
 
-impl <'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
+impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn clone_as_dummy(&'a self) -> DummyContext<'info, T> {
         let mut remaining_accounts = self.remaining_accounts.clone();
-
-        remaining_accounts.iter_mut().for_each(|x| {
-            x.clone_data();
-        });
+        kani::assume(remaining_accounts.len() <= 4);
+        slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
 
         DummyContext {
             accounts: self.accounts.clone(),
-            remaining_accounts
+            remaining_accounts,
         }
     }
 }
@@ -91,7 +89,7 @@ where
         Self {
             program_id: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: Vec::from([]),
+            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() <= 4),
 
             _a: PhantomData {},
             _b: PhantomData {},
@@ -196,7 +194,7 @@ where
         Self {
             program: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: Vec::from([]),
+            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() <= 4),
             signer_seeds: &[],
         }
     }

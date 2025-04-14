@@ -1,30 +1,45 @@
+const MAX_LEN: usize = 4;
+
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
-    F: Fn(&T) -> bool
+    F: Fn(&T) -> bool,
 {
     for i in 0..slice.len() {
-        if (predicate(&slice[i])) { return Some(i); }
+        if predicate(&slice[i]) {
+            return Some(i);
+        }
     }
     None
 }
 
 pub fn slice_find<T, F>(slice: &[T], predicate: F) -> Option<&T>
 where
-    F: Fn(&T) -> bool
+    F: Fn(&T) -> bool,
 {
-    for i in 0..slice.len() {
-        if (predicate(&slice[i])) { return Some(&slice[i]); }
+    kani::assume(slice.len() <= MAX_LEN);
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
+        let entry = &slice[i];
+        if predicate(entry) {
+            return Some(entry);
+        }
+        i += 1;
     }
     None
 }
 
 pub fn slice_all<T, F>(slice: &[T], predicate: F) -> bool
 where
-    F: Fn(&T) -> bool
+    F: Fn(&T) -> bool,
 {
+    kani::assume(slice.len() <= MAX_LEN);
+    let mut i = 0;
     let mut res = true;
-    for i in 0..slice.len() {
-        res &= predicate(&slice[i])
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
+        res &= predicate(&slice[i]);
+        i += 1;
     }
     res
 }
@@ -33,7 +48,30 @@ pub fn slice_for_each_mut<T, F>(slice: &mut [T], f: F)
 where
     F: Fn(&mut T),
 {
-    for i in 0..slice.len() {
+    kani::assume(slice.len() <= MAX_LEN);
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
         f(&mut slice[i]);
+        i += 1;
     }
+}
+
+pub fn slice_filter_map<'a, T, U, F>(slice: &'a [T], predicate: F) -> Vec<U>
+where
+    F: Fn(&'a T) -> Option<U>,
+    U: 'a,
+{
+    kani::assume(slice.len() <= MAX_LEN);
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
+        let entry = &slice[i];
+        if let Some(mapped) = predicate(entry) {
+            vec.push(mapped);
+        }
+        i += 1;
+    }
+    vec
 }

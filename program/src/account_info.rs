@@ -57,8 +57,16 @@ impl AccountInfo<'static> {
     }
 
     pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {
-        self.get_dyn()
-            .expect("`deserialized` not initialized in `as_invariant`")
+        let obj = self.get_dyn();
+        // FIXME: We reach this without having initialized our dyn object
+        kani::assert(obj.is_some(), "`deserialized` not initialized in `as_invariant` A");
+        match obj {
+            Some(inv) => inv,
+            _ => {
+                kani::assert(false, "`deserialized` not initialized in `as_invariant`");
+                unreachable!()
+            }
+        }
     }
 }
 

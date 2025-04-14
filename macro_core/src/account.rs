@@ -1,11 +1,15 @@
 use anchor_syn::{
-    AccountField, CompositeField, AccountsStruct, ConstraintGroup, Field, Ty, parser as anchor_parser,
-    codegen::accounts::{__client_accounts, __cpi_client_accounts, bumps, to_account_infos, to_account_metas},
-    codegen::accounts::{generics, ParsedGenerics}};
+    codegen::accounts::{
+        __client_accounts, __cpi_client_accounts, bumps, to_account_infos, to_account_metas,
+    },
+    codegen::accounts::{generics, ParsedGenerics},
+    parser as anchor_parser, AccountField, AccountsStruct, CompositeField, ConstraintGroup, Field,
+    Ty,
+};
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
-use quote::{quote, ToTokens, format_ident};
-use syn::{ExprType, ItemStruct, LitStr, parse::{ParseStream}, Lit};
+use quote::{format_ident, quote, ToTokens};
+use syn::{parse::ParseStream, ExprType, ItemStruct, Lit, LitStr};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let account_id_str = syn::parse2::<LitStr>(id_tokens)
@@ -27,7 +31,7 @@ pub fn pubkey(id_tokens: TokenStream) -> TokenStream {
         .expect("pubkey should have a string argument")
         .value();
     let first_char = account_id_str.as_bytes()[0];
-    
+
     // return pubkey with first char
     quote! {
         Pubkey { t: [#first_char], _padding: [0; 31] }
@@ -45,7 +49,7 @@ fn get_primitive_constraints(field: &Field) -> Option<ConstraintGroup> {
     match field.ty {
         Ty::Account(_) | Ty::AccountLoader(_) => Some(field.constraints.clone()),
         Ty::AccountInfo => Some(Default::default()),
-        _ => None
+        _ => None,
     }
 }
 
@@ -56,7 +60,9 @@ fn get_composite_constraints(field: &CompositeField) -> Option<ConstraintGroup> 
 fn get_valid_ident_constraints(field: &AccountField) -> Option<(Ident, ConstraintGroup)> {
     Some(match field {
         AccountField::Field(field) => (field.ident.clone(), get_primitive_constraints(field)?),
-        AccountField::CompositeField(field) => (field.ident.clone(), get_composite_constraints(field)?)
+        AccountField::CompositeField(field) => {
+            (field.ident.clone(), get_composite_constraints(field)?)
+        }
     })
 }
 
@@ -114,56 +120,67 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
     let ident = &val.ident;
     let generics = &val.generics;
     let mut pre = vec![];
+    let mut ensure_init = vec![];
     for field in val.fields.iter() {
         if let Some((ident, constraints)) = get_valid_ident_constraints(field) {
             if constraints.init.is_some() {
                 continue;
             } else {
-                let invariant = match field {
+                let (invariant, init, field_ty) = match field {
                     AccountField::Field(f) => {
                         if f.is_optional {
-                            quote! {
-                                self.#ident.as_ref().map(|x| x.check_invariant())
-                            }
+                            (
+                                quote! {
+                                    self.#ident.as_ref().map(|x| x.check_invariant())
+                                },
+                                quote! {
+                                    self.#ident.as_ref().map(|x| x.ensure_init())
+                                },
+                                &f.ty,
+                            )
                         } else {
-                            quote! {
-                                slf.#ident.check_invariant()
-                            }
-                        }
-                    },
-                    AccountField::CompositeField(f) => {
-                        quote! {
-                            slf.#ident.__pre_invariants()
+                            (
+                                quote! {
+                                    slf.#ident.check_invariant()
+                                },
+                                quote! {
+                                    slf.#ident.ensure_init()
+                                },
+                                &f.ty,
+                            )
                         }
                     }
+                    AccountField::CompositeField(_) => (
+                        quote! {
+                            slf.#ident.__pre_invariants()
+                        },
+                        quote! {},
+                        // dummy
+                        &Ty::Signer,
+                    ),
                 };
 
                 pre.push(invariant);
+                if matches!(field_ty, Ty::AccountLoader(_)|Ty::Account(_)) {
+                    ensure_init.push(init);
+                }
             }
         }
     }
 
-    if pre.is_empty() {
-        quote! {
-            impl #generics #ident #generics {
-                pub fn __pre_invariants(&self) {
-                }
-            }
-        }
-    } else {
-        quote! {
-            impl #generics #ident #generics {
-                pub fn __pre_invariants(&self)
-                where Self: 'static {
-                    use shared::Invariant;
-                    let slf
-                    : &'static Self = unsafe { std::mem::transmute(self) };
-                    #(#pre);*
-                    ;
-                }
+    quote! {
+        impl #generics #ident #generics {
+            pub fn __pre_invariants(&self)
+            where Self: 'static {
+                use shared::Invariant;
+                let slf
+                : &'static Self = unsafe { std::mem::transmute(self) };
+                #(#ensure_init);*;
+                #(#pre);*;
             }
         }
     }
+
 }
 
 fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
@@ -315,7 +332,6 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         })
         .collect::<Vec<TokenStream>>();
 
-
     let arbitrary_impl = quote! {
         impl<#combined_generics> kani::Arbitrary for #ident<#struct_generics> #where_clause {
             fn any() -> Self {
@@ -329,13 +345,40 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let clone_impl = if has_clone {
         quote! {}
     } else {
-        let clone_fields = val.fields.iter().map(|x| {
-            let ident = match x {
-                AccountField::Field(field) => &field.ident,
-                AccountField::CompositeField(field) => &field.ident,
-            };
-            quote! { #ident: self.#ident.clone() }
-        }).collect::<Vec<_>>();
+        let clone_fields = val
+            .fields
+            .iter()
+            .map(|x| {
+                let (ident, is_acc_info, is_optional) = match x {
+                    AccountField::Field(field) => (&field.ident, matches!(field.ty, Ty::AccountInfo), field.is_optional),
+                    AccountField::CompositeField(field) => (&field.ident, false, false),
+                };
+                if is_acc_info {
+                    if is_optional {
+                        quote! {
+                            #ident: {
+                                let mut tmp = self.#ident.clone();
+                                if let Some(tmp) = tmp.as_mut() {
+                                    tmp.clone_data();
+                                }
+                                tmp
+                            }
+                        }
+                    } else {
+                        quote! {
+                            #ident: {
+                                let mut tmp = self.#ident.clone();
+                                tmp.clone_data();
+                                tmp
+                            }
+                        }
+                    }
+
+                } else {
+                    quote! { #ident: self.#ident.clone() }
+                }
+            })
+            .collect::<Vec<_>>();
         quote! {
             impl<#combined_generics> Clone for #ident<#struct_generics> #where_clause {
                 fn clone(&self) -> Self {
@@ -349,7 +392,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
 
     let pre_invariant_impl = create_pre_invariants(&val);
     let post_invariant_impl = create_post_invariants(&val);
-    println!("post invariants for {} {}", ident, post_invariant_impl);
+    // println!("post invariants for {} {}", ident, post_invariant_impl);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
     let client_accounts = __client_accounts::generate(&val);
@@ -379,10 +422,9 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let item = syn::parse2::<ItemStruct>(input.clone())?;
     let ident = item.ident;
 
-
     let args_parsed = syn::parse::Parser::parse2(
         syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated,
-        args
+        args,
     )?;
 
     if args_parsed.iter().any(|x| {
@@ -392,14 +434,17 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
             }
         }
         false
-    }) { return Ok(input) }
+    }) {
+        return Ok(input);
+    }
 
-
-    let is_zero_copy = args_parsed.iter().any(|x| 
+    let is_zero_copy = args_parsed.iter().any(|x| {
         if let syn::Expr::Path(p) = x {
-            return p.path.is_ident("zero_copy")
-        } else { false }
-    );
+            return p.path.is_ident("zero_copy");
+        } else {
+            false
+        }
+    });
 
     let ser_derives = if is_zero_copy {
         quote! {
@@ -468,7 +513,6 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     };
     Ok(res)
 }
-
 
 pub fn zero_copy(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let s = syn::parse2::<ItemStruct>(input.clone())?;

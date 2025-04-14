@@ -65,6 +65,10 @@ impl<
         self.acc_info.as_account::<T>()
     }
 
+    pub fn ensure_init(&self) {
+        self.acc_info.init_as::<T>();
+    }
+
     pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {
         let acc: &T = &*self.account_for_verification();
         // SAFETY: I promise I won't do anything bad with this reference!

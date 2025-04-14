@@ -169,12 +169,12 @@ fn create_verify(
             );*
 
             let conc: anchor_lang::context::ConcreteContext<#ctx_type> = kani::any();
-            let dummy = conc.clone_as_dummy();
-
             let ctx = conc.to_ctx();
 
             // FIXME: Refactor to work with `assume`
-            // conc.to_ctx().accounts.__pre_invariants();
+            conc.to_ctx().accounts.__pre_invariants();
+            let dummy = conc.clone_as_dummy();
+
             let result = #mod_name::#function_name(#(#parameter_names),*);
 
             if !result.is_err() {

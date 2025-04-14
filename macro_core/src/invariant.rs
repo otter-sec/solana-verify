@@ -21,11 +21,13 @@ pub fn invariant(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                 }
 
                 fn check_invariant(&self) {
-                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), "invariant ", stringify!(#attr)));
+                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), " invariant ", stringify!(#attr)));
                 }
 
                 fn check_transition_invariant(&self, other: &dyn ::shared::Invariant<anchor_lang::prelude::AccountInfo<'static>>, remaining_accounts: &[anchor_lang::prelude::AccountInfo]) {
+                    kani::assert(kani::any(), "reached check_transition_invariant");
                     let before = other.as_any().downcast_ref::<#ident>().unwrap();
+                    kani::assert(kani::any(), "downcast ok");
                     self._check_transition_invariant(before, remaining_accounts);
                 }
             }
@@ -46,7 +48,7 @@ pub fn transition_invariant(attr: TokenStream, item: TokenStream) -> Result<Toke
             impl #ident {
                 pub fn _check_transition_invariant<T>(&self, old: T, remaining_accounts: &[anchor_lang::prelude::AccountInfo])
                 where T: Deref<Target = Self>, {
-                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), "transition invariant ", stringify!(#attr)));
+                    kani::assert(#attr, concat!(concat!("failed ", stringify!(#ident)), " transition invariant ", stringify!(#attr)));
                 }
             }
         },

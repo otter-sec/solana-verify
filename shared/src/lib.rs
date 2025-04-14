@@ -12,7 +12,7 @@ where
     fn check_invariant(&self);
     fn check_transition_invariant(
         &self,
-        old: &dyn Invariant<AccountInfo>,
+        old: &AccountInfo,
         remaining: &[AccountInfo],
     );
 }

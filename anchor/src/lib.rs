@@ -63,8 +63,8 @@ pub mod prelude {
     };
 
     pub use otter_solana_macro::{
-        access_control, account, declare_id, error_code, helper_fn, invariant, transition_invariant, program, Accounts,
-        InitSpace, zero_copy, stub
+        access_control, account, declare_id, error_code, helper_fn, invariant,
+        program, stub, transition_invariant, zero_copy, Accounts, InitSpace,
     };
 
     pub use crate::account::{self, Account};

@@ -11,7 +11,7 @@ pub fn pubkey(s: TokenStream) -> TokenStream {
     core::account::pubkey(s.into()).into()
 }
 
-#[proc_macro_derive(Accounts, attributes(account, instruction))]
+#[proc_macro_derive(Accounts, attributes(account, instruction, assume_types))]
 pub fn derive_accounts(item: TokenStream) -> TokenStream {
     core::account::derive_accounts(item.into()).unwrap().into()
 }
@@ -23,7 +23,6 @@ pub fn derive_init_space(item: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn account(args: TokenStream, item: TokenStream) -> TokenStream {
-    
     core::account::account(args.into(), item.into())
         .unwrap()
         .into()
@@ -97,4 +96,3 @@ pub fn zero_copy(args: TokenStream, item: TokenStream) -> TokenStream {
 pub fn stub(attr: TokenStream, item: TokenStream) -> TokenStream {
     core::stub::stub(attr.into(), item.into()).into()
 }
-

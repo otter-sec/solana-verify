@@ -40,17 +40,19 @@ impl AccountInfo<'static> {
         Some(())
     }
 
-    pub fn check_transition_invariant(&self, old: &dyn shared::Invariant<Self>, account_infos: &[Self]) -> Option<()> {
+    pub fn check_transition_invariant(&self, old: &Self, account_infos: &[Self]) -> Option<()> {
         let a = self.get_dyn()?;
-        kani::assert(
-            a.type_id() == old.type_id(),
-            "old and new are different types",
-        );
+        if let Some(old) = old.get_dyn() {
+            kani::assert(
+                a.type_id() == old.type_id(),
+                "old and new are different types",
+            );
+        };
         a.check_transition_invariant(old, account_infos);
         Some(())
     }
 
-    fn get_dyn(&self) -> Option<&'static dyn shared::Invariant<AccountInfo<'static>>> {
+    pub fn get_dyn(&self) -> Option<&'static dyn shared::Invariant<AccountInfo<'static>>> {
         let deserialized = unsafe { &*self.deserialized }.as_ref()?;
         let t = unsafe { &**deserialized.try_borrow().ok()? };
         Some(t as &dyn shared::Invariant<_>)
@@ -58,15 +60,8 @@ impl AccountInfo<'static> {
 
     pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {
         let obj = self.get_dyn();
-        // FIXME: We reach this without having initialized our dyn object
-        kani::assert(obj.is_some(), "`deserialized` not initialized in `as_invariant` A");
-        match obj {
-            Some(inv) => inv,
-            _ => {
-                kani::assert(false, "`deserialized` not initialized in `as_invariant`");
-                unreachable!()
-            }
-        }
+        kani::assert(obj.is_some(), "`deserialized` not initialized in `as_invariant`");
+        obj.unwrap()
     }
 }
 

@@ -70,7 +70,7 @@ impl<T: Invariant<AccountInfo<'static>> + kani::Arbitrary + Clone + 'static> Acc
         self.info.as_account::<T>().check_invariant()
     }
 
-    fn check_transition_invariant(&self, other: &dyn shared::Invariant<AccountInfo<'static>>, remaining: &[AccountInfo<'static>]) {
+    fn check_transition_invariant(&self, other: &AccountInfo<'static>, remaining: &[AccountInfo<'static>]) {
         self.info.as_account::<T>().check_transition_invariant(other, remaining)
     }
 }

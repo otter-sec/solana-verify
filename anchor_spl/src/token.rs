@@ -1,6 +1,6 @@
 use onchor::prelude::{AccountMeta, FastVec as Vec, account, invariant, Accounts};
 use onchor::solana_program::account_info::AccountInfo;
-
+use onchor::ToAccountInfo;
 use onchor::solana_program::pubkey::Pubkey;
 use onchor::context::CpiContext;
 use onchor::{solana_program, Result, ToAccountInfos, ToAccountMetas, AccountDeserialize, AccountSerialize, AnchorSerialize, AnchorDeserialize};

@@ -9,7 +9,7 @@ use anchor_syn::{
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{parse::ParseStream, ExprType, ItemStruct, Lit, LitStr};
+use syn::{parse::ParseStream, Expr, ExprType, ItemStruct, Lit, LitStr};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let account_id_str = syn::parse2::<LitStr>(id_tokens)
@@ -116,7 +116,7 @@ fn create_constraints_checks(
     }
 }
 
-fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
+fn create_pre_invariants(val: &AccountsStruct, has_assume_types: bool) -> TokenStream {
     let ident = &val.ident;
     let generics = &val.generics;
     let mut pre = vec![];
@@ -161,12 +161,18 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
                 };
 
                 pre.push(invariant);
-                if matches!(field_ty, Ty::AccountLoader(_)|Ty::Account(_)) {
+                if matches!(field_ty, Ty::AccountLoader(_) | Ty::Account(_)) {
                     ensure_init.push(init);
                 }
             }
         }
     }
+
+    let assume_types = if has_assume_types {
+        quote!{ slf._assume_types() }
+    } else {
+        quote!{ }
+    };
 
     quote! {
         impl #generics #ident #generics {
@@ -175,18 +181,21 @@ fn create_pre_invariants(val: &AccountsStruct) -> TokenStream {
                 use shared::Invariant;
                 let slf
                 : &'static Self = unsafe { std::mem::transmute(self) };
+
+                #assume_types;
+
                 #(#ensure_init);*;
                 #(#pre);*;
             }
         }
     }
-
 }
 
 fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
     let ident = &val.ident;
     let generics = &val.generics;
     let mut post = vec![];
+
     for field in val.fields.iter() {
         if let Some((ident, constraints)) = get_valid_ident_constraints(field) {
             if constraints.is_close() {
@@ -206,10 +215,10 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
                         (None, true) => {
-                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(old.accounts.#ident.as_ref().unwrap().as_invariant(), &remaining_accounts)) }
+                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(&old.accounts.#ident.as_ref().unwrap().to_account_info(), &remaining_accounts)) }
                         }
                         (None, false) => {
-                            quote! { slf.#ident.check_transition_invariant(old.accounts.#ident.as_invariant(), &remaining_accounts) }
+                            quote! { slf.#ident.check_transition_invariant(&old.accounts.#ident.to_account_info(), &remaining_accounts) }
                         }
                         _ => quote! {},
                     };
@@ -275,6 +284,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let mut arg_names: Vec<Ident> = vec![];
     let mut arg_types: Vec<syn::Type> = vec![];
     let mut has_clone = false;
+    let mut assume_types_impl = None;
 
     for t in arg_item.attrs {
         if t.path.is_ident("instruction") {
@@ -293,6 +303,18 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
             unimplemented!("invariants are only supported on #[account] structs")
         } else if t.path.is_ident("derive") && t.tokens.to_string().contains("Clone") {
             has_clone = true;
+        } else if t.path.is_ident("assume_types") {
+            let expr = syn::parse2::<Expr>(t.tokens)?;
+            let ident = arg_item.ident.clone();
+            let generics =arg_item.generics.clone();
+            assume_types_impl = Some(quote!{
+                impl #generics #ident #generics {
+                    #[deny(dead_code)]
+                    fn _assume_types(&self) {
+                        #expr
+                    }
+                }
+            });
         }
     }
 
@@ -350,7 +372,11 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
             .iter()
             .map(|x| {
                 let (ident, is_acc_info, is_optional) = match x {
-                    AccountField::Field(field) => (&field.ident, matches!(field.ty, Ty::AccountInfo), field.is_optional),
+                    AccountField::Field(field) => (
+                        &field.ident,
+                        matches!(field.ty, Ty::AccountInfo),
+                        field.is_optional,
+                    ),
                     AccountField::CompositeField(field) => (&field.ident, false, false),
                 };
                 if is_acc_info {
@@ -373,7 +399,6 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                             }
                         }
                     }
-
                 } else {
                     quote! { #ident: self.#ident.clone() }
                 }
@@ -390,7 +415,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         }
     };
 
-    let pre_invariant_impl = create_pre_invariants(&val);
+    let pre_invariant_impl = create_pre_invariants(&val, assume_types_impl.is_some());
     let post_invariant_impl = create_post_invariants(&val);
     // println!("post invariants for {} {}", ident, post_invariant_impl);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
@@ -399,6 +424,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let cpi_client_accounts = __cpi_client_accounts::generate(&val);
     let to_account_metas = to_account_metas::generate(&val);
     let to_account_infos = to_account_infos::generate(&val);
+    let assume_types_impl = assume_types_impl.unwrap_or_default();
 
     let res = quote! {
         #bumps_impl
@@ -411,6 +437,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         #cpi_client_accounts
         #to_account_metas
         #to_account_infos
+        #assume_types_impl
     };
 
     // println!("{}", res);
@@ -514,7 +541,7 @@ pub fn account(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     Ok(res)
 }
 
-pub fn zero_copy(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+pub fn zero_copy(_args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let s = syn::parse2::<ItemStruct>(input.clone())?;
     let attr = s
         .attrs

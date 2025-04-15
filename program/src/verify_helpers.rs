@@ -6,7 +6,7 @@ where
 {
     kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     for i in 0..slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < MAX_LEN);
         if predicate(&slice[i]) {
             return Some(i);
         }
@@ -14,14 +14,14 @@ where
     None
 }
 
-pub fn slice_find<T, F>(slice: &[T], predicate: F) -> Option<&T>
+pub fn slice_find<T, F, const LIM: usize>(slice: &[T], predicate: F) -> Option<&T>
 where
     F: Fn(&T) -> bool,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(slice.len() <= LIM, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < LIM);
         let entry = &slice[i];
         if predicate(entry) {
             return Some(entry);
@@ -39,7 +39,7 @@ where
     let mut i = 0;
     let mut res = true;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < MAX_LEN);
         res &= predicate(&slice[i]);
         i += 1;
     }
@@ -53,7 +53,7 @@ where
     kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < MAX_LEN);
         f(&slice[i]);
         i += 1;
     }
@@ -66,22 +66,22 @@ where
     kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < MAX_LEN);
         f(&mut slice[i]);
         i += 1;
     }
 }
 
-pub fn slice_filter_map<'a, T, U, F>(slice: &'a [T], predicate: F) -> Vec<U>
+pub fn slice_filter_map<'a, T, U, F, const LIM: usize>(slice: &'a [T], predicate: F) -> Vec<U>
 where
     F: Fn(&'a T) -> Option<U>,
     U: 'a,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(slice.len() <= LIM, "Slice should be bounded to <= MAX_LEN");
     let mut vec = Vec::new();
     let mut i = 0;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < LIM);
         let entry = &slice[i];
         if let Some(mapped) = predicate(entry) {
             vec.push(mapped);
@@ -99,7 +99,7 @@ where
     let mut count: usize = 0;
     let mut i = 0;
     while i < slice.len() {
-        kani::assume(i <= MAX_LEN);
+        kani::assume(i < MAX_LEN);
         let entry = &slice[i];
         if predicate(entry) {
             count += 1;

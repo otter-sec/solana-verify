@@ -71,11 +71,10 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> Ref<T> {
-        self.init_as::<T>();
+        self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.borrow() };
-        assert!(t.as_any().is::<T>());
 
         Ref::map(r.borrow(), |x| {
             unsafe { &**x }.as_any().downcast_ref::<T>().unwrap()
@@ -87,11 +86,10 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> RefMut<T> {
-        self.init_as::<T>();
+        self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.borrow() };
-        assert!(t.as_any().is::<T>());
 
         RefMut::map(r.borrow_mut(), |x| {
             unsafe { &mut **x }
@@ -106,11 +104,10 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> &T {
-        self.init_as::<T>();
+        self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.borrow() };
-        assert!(t.as_any().is::<T>());
 
         t.as_any().downcast_ref::<T>().unwrap()
     }
@@ -134,11 +131,10 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> &mut T {
-        self.init_as::<T>();
+        self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let mut t = unsafe { &mut **r.borrow() };
-        assert!(t.as_any().is::<T>());
 
         t.as_any_mut().downcast_mut::<T>().unwrap()
     }
@@ -153,6 +149,18 @@ impl<'a> AccountInfo<'a> {
             let t: T = kani::any();
             *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
         }
+    }
+
+    pub fn assert_init_as<
+        T: Sized + kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static,
+    >(
+        &self,
+    ) {
+        let r = unsafe { &*self.deserialized }.as_ref();
+        kani::assert(r.is_some(), "All AccountInfo must be initialized with a type using #[assume_types()]");
+
+        let t = unsafe { &**r.unwrap().borrow() };
+        kani::assert(t.as_any().is::<T>(), "AccountInfo was deserialized as a different type than it was initialized!");
     }
 
     pub fn is_initialized(&self) -> bool {
@@ -173,6 +181,7 @@ impl<'a> AccountInfo<'a> {
 
     pub fn clone_data(&mut self) {
         let mut d = unsafe { &mut *self.deserialized };
+
         let inner = d.as_ref().map(|x| {
             let ptr = *x.borrow();
             let cloned_t: &mut dyn shared::Invariant<AccountInfo<'static>> =

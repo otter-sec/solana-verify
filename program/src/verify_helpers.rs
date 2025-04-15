@@ -1,10 +1,12 @@
-const MAX_LEN: usize = 4;
+const MAX_LEN: usize = 8;
 
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
     F: Fn(&T) -> bool,
 {
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     for i in 0..slice.len() {
+        kani::assume(i <= MAX_LEN);
         if predicate(&slice[i]) {
             return Some(i);
         }
@@ -16,7 +18,7 @@ pub fn slice_find<T, F>(slice: &[T], predicate: F) -> Option<&T>
 where
     F: Fn(&T) -> bool,
 {
-    kani::assume(slice.len() <= MAX_LEN);
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i <= MAX_LEN);
@@ -33,7 +35,7 @@ pub fn slice_all<T, F>(slice: &[T], predicate: F) -> bool
 where
     F: Fn(&T) -> bool,
 {
-    kani::assume(slice.len() <= MAX_LEN);
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     let mut res = true;
     while i < slice.len() {
@@ -44,11 +46,11 @@ where
     res
 }
 
-pub fn slice_for_each<T, F>(slice: &[T], f: F)
+pub fn slice_for_each<T, F>(slice: &[T], mut f: F)
 where
-    F: Fn(&T),
+    F: FnMut(&T),
 {
-    kani::assume(slice.len() <= MAX_LEN);
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i <= MAX_LEN);
@@ -57,11 +59,11 @@ where
     }
 }
 
-pub fn slice_for_each_mut<T, F>(slice: &mut [T], f: F)
+pub fn slice_for_each_mut<T, F>(slice: &mut [T], mut f: F)
 where
-    F: Fn(&mut T),
+    F: FnMut(&mut T),
 {
-    kani::assume(slice.len() <= MAX_LEN);
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i <= MAX_LEN);
@@ -75,7 +77,7 @@ where
     F: Fn(&'a T) -> Option<U>,
     U: 'a,
 {
-    kani::assume(slice.len() <= MAX_LEN);
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
     let mut vec = Vec::new();
     let mut i = 0;
     while i < slice.len() {

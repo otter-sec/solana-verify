@@ -79,7 +79,7 @@ fn create_succeeds_if(
 
             let conc: anchor_lang::context::ConcreteContext<#ctx_type> = kani::any();
             let ctx = conc.to_ctx();
-            kani::assume(conc.to_ctx().accounts.__pre_invariants());
+            kani::assume(conc.to_ctx().accounts.__pre_invariants(&ctx.remaining_accounts));
             let precondition = #precondition;
             kani::assume(precondition);
             #constraint_check
@@ -123,7 +123,7 @@ fn create_errors_if(
 
             let conc: anchor_lang::context::ConcreteContext<#ctx_type> = kani::any();
             let ctx = conc.to_ctx();
-            kani::assume(conc.to_ctx().accounts.__pre_invariants());
+            kani::assume(conc.to_ctx().accounts.__pre_invariants(&ctx.remaining_accounts));
             let error_conds = #error_conds;
             kani::assume(error_conds);
             #constraint_check
@@ -172,7 +172,7 @@ fn create_verify(
             let ctx = conc.to_ctx();
 
             // FIXME: Refactor to work with `assume`
-            conc.to_ctx().accounts.__pre_invariants();
+            conc.to_ctx().accounts.__pre_invariants(&ctx.remaining_accounts);
             let dummy = conc.clone_as_dummy();
 
             let result = #mod_name::#function_name(#(#parameter_names),*);

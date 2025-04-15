@@ -152,7 +152,7 @@ fn create_pre_invariants(val: &AccountsStruct, has_assume_types: bool) -> TokenS
                     }
                     AccountField::CompositeField(_) => (
                         quote! {
-                            slf.#ident.__pre_invariants()
+                            slf.#ident.__pre_invariants(remaining_accounts);
                         },
                         quote! {},
                         // dummy
@@ -169,14 +169,14 @@ fn create_pre_invariants(val: &AccountsStruct, has_assume_types: bool) -> TokenS
     }
 
     let assume_types = if has_assume_types {
-        quote!{ slf._assume_types() }
+        quote!{ slf._assume_types(remaining_accounts) }
     } else {
         quote!{ }
     };
 
     quote! {
         impl #generics #ident #generics {
-            pub fn __pre_invariants(&self)
+            pub fn __pre_invariants(&self, remaining_accounts: &[AccountInfo])
             where Self: 'static {
                 use shared::Invariant;
                 let slf
@@ -310,7 +310,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
             assume_types_impl = Some(quote!{
                 impl #generics #ident #generics {
                     #[deny(dead_code)]
-                    fn _assume_types(&self) {
+                    fn _assume_types(&self, remaining_accounts: &[AccountInfo]) {
                         #expr
                     }
                 }

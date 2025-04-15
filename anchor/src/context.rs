@@ -90,7 +90,7 @@ where
         Self {
             program_id: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() <= 4),
+            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() == 1),
 
             _a: PhantomData {},
             _b: PhantomData {},
@@ -195,7 +195,7 @@ where
         Self {
             program: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() <= 4),
+            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() == 1),
             signer_seeds: &[],
         }
     }

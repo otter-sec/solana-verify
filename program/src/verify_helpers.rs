@@ -44,6 +44,19 @@ where
     res
 }
 
+pub fn slice_for_each<T, F>(slice: &[T], f: F)
+where
+    F: Fn(&T),
+{
+    kani::assume(slice.len() <= MAX_LEN);
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
+        f(&slice[i]);
+        i += 1;
+    }
+}
+
 pub fn slice_for_each_mut<T, F>(slice: &mut [T], f: F)
 where
     F: Fn(&mut T),

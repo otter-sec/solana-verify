@@ -90,3 +90,21 @@ where
     }
     vec
 }
+
+pub fn slice_filter_count<'a, T, F>(slice: &'a [T], predicate: F) -> usize
+where
+    F: Fn(&T) -> bool,
+{
+    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    let mut count: usize = 0;
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i <= MAX_LEN);
+        let entry = &slice[i];
+        if predicate(entry) {
+            count += 1;
+        }
+        i += 1;
+    }
+    count
+}

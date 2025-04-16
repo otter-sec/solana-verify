@@ -88,7 +88,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> RefMut<T> {
-        assert!(!self.disallow_mut);
+        kani::assert(!self.disallow_mut, "raw AccountInfo data borrowed mutably");
         self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -136,7 +136,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> &mut T {
-        assert!(!self.disallow_mut);
+        kani::assert(!self.disallow_mut, "raw AccountInfo data borrowed mutably");
         self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();

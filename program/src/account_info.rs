@@ -30,7 +30,9 @@ pub struct AccountInfo<'a> {
     pub executable: bool,
     pub rent_epoch: bool, //Epoch,
 
+    // extra fields for verification
     pub deserialized: *mut Option<RefCell<*mut dyn shared::Invariant<AccountInfo<'static>>>>,
+    pub disallow_mut: bool
 }
 
 impl AccountInfo<'static> {
@@ -86,6 +88,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> RefMut<T> {
+        assert!(!self.disallow_mut);
         self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -133,6 +136,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> &mut T {
+        assert!(!self.disallow_mut);
         self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
@@ -181,6 +185,8 @@ impl<'a> AccountInfo<'a> {
     }
 
     pub fn clone_data(&mut self) {
+        if self.disallow_mut { return; }
+
         let mut d = unsafe { &mut *self.deserialized };
 
         let inner = d.as_ref().map(|x| {
@@ -299,6 +305,7 @@ impl<'info> kani::Arbitrary for AccountInfo<'info> {
             executable: kani::any(),
             rent_epoch: kani::any(),
             deserialized: Box::leak(Box::new(None)) as *mut _,
+            disallow_mut: false
         }
     }
 }
@@ -315,6 +322,7 @@ impl Default for AccountInfo<'_> {
             executable: bool::default(),
             rent_epoch: bool::default(),
             deserialized: Box::leak(Box::new(None)) as *mut _,
+            disallow_mut: false
         }
     }
 }

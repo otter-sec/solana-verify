@@ -337,14 +337,25 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         .fields
         .iter()
         .map(|field| {
-            let (boxed, ident) = match field {
-                AccountField::Field(field) => (is_field_boxed(field), &field.ident),
-                AccountField::CompositeField(c_field) => (false, &c_field.ident),
+            let (boxed, ident, is_acc_info, is_optional) = match field {
+                AccountField::Field(field) => (is_field_boxed(field), &field.ident, matches!(field.ty, Ty::AccountInfo), field.is_optional),
+                AccountField::CompositeField(c_field) => (false, &c_field.ident, false, false),
             };
 
             if boxed {
+                assert!(!is_acc_info);
                 quote! {
                     #ident: Box::new(kani::any())
+                }
+            } else if is_acc_info {
+                if is_optional {
+                    quote! {
+                        #ident: { let mut tmp: Option<AccountInfo<'static>> = kani::any(); tmp.map(|mut x| { x.disallow_mut = true; x }) }
+                    }
+                } else {
+                    quote! {
+                        #ident: { let mut tmp: AccountInfo<'static> = kani::any(); tmp.disallow_mut = true; tmp }
+                    }
                 }
             } else {
                 quote! {
@@ -385,7 +396,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                             #ident: {
                                 let mut tmp = self.#ident.clone();
                                 if let Some(tmp) = tmp.as_mut() {
-                                    // tmp.clone_data();
+                                    tmp.clone_data();
                                 }
                                 tmp
                             }
@@ -394,7 +405,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                         quote! {
                             #ident: {
                                 let mut tmp = self.#ident.clone();
-                                // tmp.clone_data();
+                                tmp.clone_data();
                                 tmp
                             }
                         }

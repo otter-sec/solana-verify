@@ -110,18 +110,7 @@ impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> kani::Arbitrary
 
 impl<'info, T: Owner> ToAccountInfo<'info> for AccountLoader<'info, T> {
     fn to_account_info(&self) -> AccountInfo<'info> {
-        // Create a new Anchor AccountInfo from your custom AccountInfo's fields
-        AccountInfo {
-            key: self.acc_info.key,
-            is_signer: self.acc_info.is_signer,
-            is_writable: self.acc_info.is_writable,
-            lamports: self.acc_info.lamports,
-            data: self.acc_info.data,
-            owner: self.acc_info.owner,
-            executable: self.acc_info.executable,
-            rent_epoch: self.acc_info.rent_epoch,
-            deserialized: self.acc_info.deserialized,
-        }
+        self.acc_info.clone()
     }
 }
 

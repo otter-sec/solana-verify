@@ -66,7 +66,7 @@ impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
         kani::assume(self.remaining_accounts.len() <= 4);
         let mut remaining_accounts = self.remaining_accounts.clone();
         kani::assume(remaining_accounts.len() <= 4);
-        // slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
+        slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
 
         DummyContext {
             accounts: self.accounts.clone(),
@@ -192,10 +192,18 @@ where
     T: kani::Arbitrary + ToAccountMetas + ToAccountInfos<'info>,
 {
     fn any() -> Self {
+        let mut remaining_accounts = Vec::new();
+        // For now we only implement remaining_accounts.len() <= 1
+        if kani::any() {
+            let mut acct: AccountInfo = kani::any();
+            acct.disallow_mut = true;
+            remaining_accounts.push(acct);
+        }
+
         Self {
             program: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() == 1),
+            remaining_accounts,
             signer_seeds: &[],
         }
     }

@@ -66,7 +66,7 @@ impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
         kani::assume(self.remaining_accounts.len() <= 4);
         let mut remaining_accounts = self.remaining_accounts.clone();
         kani::assume(remaining_accounts.len() <= 4);
-        slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
+        // slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
 
         DummyContext {
             accounts: self.accounts.clone(),

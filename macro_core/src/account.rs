@@ -385,7 +385,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                             #ident: {
                                 let mut tmp = self.#ident.clone();
                                 if let Some(tmp) = tmp.as_mut() {
-                                    tmp.clone_data();
+                                    // tmp.clone_data();
                                 }
                                 tmp
                             }
@@ -394,7 +394,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
                         quote! {
                             #ident: {
                                 let mut tmp = self.#ident.clone();
-                                tmp.clone_data();
+                                // tmp.clone_data();
                                 tmp
                             }
                         }

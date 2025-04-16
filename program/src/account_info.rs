@@ -117,6 +117,8 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> Option<&T> {
+        // kani::assert(unsafe { &mut *self.deserialized }.is_some(), "maybe_as_account has no data :(");
+        // kani::assert(unsafe { &**((&mut *self.deserialized).as_ref().unwrap().borrow()) }.as_any().downcast_ref::<T>().is_some(), "maybe_as_account wrong type :/");
         unsafe { &mut *self.deserialized }
             .as_ref()
             .map(|x| {
@@ -145,10 +147,9 @@ impl<'a> AccountInfo<'a> {
         &self,
     ) {
         let mut d = unsafe { &mut *self.deserialized };
-        if d.is_none() {
-            let t: T = kani::any();
-            *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
-        }
+        assert!(d.is_none());
+        let t: T = kani::any();
+        *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
     }
 
     pub fn assert_init_as<
@@ -318,24 +319,3 @@ impl Default for AccountInfo<'_> {
     }
 }
 
-// Ugly hack to allow kani to generate &AccountInfo
-#[cfg(any(kani, feature = "kani"))]
-impl<'info> kani::Arbitrary for &'info AccountInfo<'info> {
-    fn any() -> Self {
-        // Create the actual AccountInfo
-        let account = AccountInfo {
-            key: kani_new_pubkey(),
-            is_signer: kani::any(),
-            is_writable: kani::any(),
-            lamports: kani::any(),
-            data: kani::any(),
-            owner: kani_new_pubkey(),
-            executable: kani::any(),
-            rent_epoch: kani::any(),
-            deserialized: Box::leak(Box::new(None)) as *mut _,
-        };
-
-        // Leak the account to extend its lifetime
-        Box::leak(Box::new(account))
-    }
-}

@@ -102,7 +102,7 @@ impl<'info, T: Owner + kani::Arbitrary + Clone + 'static> kani::Arbitrary
 {
     fn any() -> Self {
         Self {
-            acc_info: kani::any(),
+            acc_info: Box::leak(Box::new(kani::any())),
             phantom: PhantomData,
         }
     }

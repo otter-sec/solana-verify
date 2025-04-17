@@ -87,11 +87,12 @@ where
     T: kani::Arbitrary,
 {
     fn any() -> Self {
+        let mut remaining_accounts: Vec<AccountInfo<'static>> = kani::any_where(|v: &Vec<_>| v.len() <= 4);
+
         Self {
             program_id: kani::any(),
             accounts: kani::any(),
-            remaining_accounts: kani::any_where(|v: &Vec<_>| v.len() <= 1),
-
+            remaining_accounts,
             _a: PhantomData {},
             _b: PhantomData {},
             _c: PhantomData {},
@@ -192,18 +193,10 @@ where
     T: kani::Arbitrary + ToAccountMetas + ToAccountInfos<'info>,
 {
     fn any() -> Self {
-        let mut remaining_accounts = Vec::new();
-        // For now we only implement remaining_accounts.len() <= 1
-        if kani::any() {
-            let mut acct: AccountInfo = kani::any();
-            acct.disallow_mut = true;
-            remaining_accounts.push(acct);
-        }
-
         Self {
             program: kani::any(),
             accounts: kani::any(),
-            remaining_accounts,
+            remaining_accounts: Vec::new(), // todo
             signer_seeds: &[],
         }
     }

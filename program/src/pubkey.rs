@@ -27,7 +27,15 @@ pub struct Pubkey {
 
 impl Eq for Pubkey {}
 impl PartialEq for Pubkey {
-    fn eq(&self, other: &Self) -> bool { self.t == other.t }
+    fn eq(&self, other: &Self) -> bool {
+        let mut res = true;
+        let mut i = 0;
+        while i < PUBKEY_BYTES {
+            res &= self.t[i] == other.t[i];
+            i += 1;
+        }
+        res
+    }
 }
 
 impl Clone for Pubkey {

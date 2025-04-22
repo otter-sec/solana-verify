@@ -61,11 +61,13 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
     }
 }
 
+const MAX_REMAINING_ACCOUNTS: usize = 2;
+
 impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn clone_as_dummy(&'a self) -> DummyContext<'info, T> {
-        kani::assume(self.remaining_accounts.len() <= 4);
+        kani::assume(self.remaining_accounts.len() <= MAX_REMAINING_ACCOUNTS);
         let mut remaining_accounts = self.remaining_accounts.clone();
-        kani::assume(remaining_accounts.len() <= 4);
+        kani::assume(remaining_accounts.len() <= MAX_REMAINING_ACCOUNTS);
         slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
 
         DummyContext {
@@ -87,7 +89,7 @@ where
     T: kani::Arbitrary,
 {
     fn any() -> Self {
-        let mut remaining_accounts: Vec<AccountInfo<'static>> = kani::any_where(|v: &Vec<_>| v.len() <= 4);
+        let mut remaining_accounts: Vec<AccountInfo<'static>> = kani::any_where(|v: &Vec<_>| v.len() <= MAX_REMAINING_ACCOUNTS);
 
         Self {
             program_id: kani::any(),

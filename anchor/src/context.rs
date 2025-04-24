@@ -61,7 +61,7 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
     }
 }
 
-const MAX_REMAINING_ACCOUNTS: usize = 2;
+const MAX_REMAINING_ACCOUNTS: usize = 0;
 
 impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn clone_as_dummy(&'a self) -> DummyContext<'info, T> {

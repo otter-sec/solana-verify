@@ -11,7 +11,7 @@ pub fn pubkey(s: TokenStream) -> TokenStream {
     core::account::pubkey(s.into()).into()
 }
 
-#[proc_macro_derive(Accounts, attributes(account, instruction, assume_types))]
+#[proc_macro_derive(Accounts, attributes(account, instruction, assume_types, post_assume_types))]
 pub fn derive_accounts(item: TokenStream) -> TokenStream {
     core::account::derive_accounts(item.into()).unwrap().into()
 }

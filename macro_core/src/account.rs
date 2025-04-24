@@ -169,9 +169,9 @@ fn create_pre_invariants(val: &AccountsStruct, has_assume_types: bool) -> TokenS
     }
 
     let assume_types = if has_assume_types {
-        quote!{ slf._assume_types(remaining_accounts) }
+        quote! { slf._assume_types(remaining_accounts) }
     } else {
-        quote!{ }
+        quote! {}
     };
 
     quote! {
@@ -191,7 +191,7 @@ fn create_pre_invariants(val: &AccountsStruct, has_assume_types: bool) -> TokenS
     }
 }
 
-fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
+fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> TokenStream {
     let ident = &val.ident;
     let generics = &val.generics;
     let mut post = vec![];
@@ -238,6 +238,12 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
         }
     }
 
+    let post_assume_types = if has_post_assume_types {
+        quote! { self._post_assume_types(&mut remaining_accounts); }
+    } else {
+        quote! {}
+    };
+
     let assert_initialized = quote! {
         kani::assert(
             crate::solana_program::verify_helpers::slice_all(&old.remaining_accounts, |acc| acc.is_initialized()),
@@ -268,9 +274,8 @@ fn create_post_invariants(val: &AccountsStruct) -> TokenStream {
                     let old: &'static anchor_lang::context::DummyContext<Self> = unsafe {
                         std::mem::transmute(old)
                     };
-                    let remaining_accounts: &'static [AccountInfo<'static>] = unsafe {
-                        std::mem::transmute(old.remaining_accounts.as_slice())
-                    };
+                    let mut remaining_accounts = old.remaining_accounts.to_vec();
+                    #post_assume_types
                     #(#post);*
                     ;
                 }
@@ -285,6 +290,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let mut arg_types: Vec<syn::Type> = vec![];
     let mut has_clone = false;
     let mut assume_types_impl = None;
+    let mut post_assume_types_impl = None;
 
     for t in arg_item.attrs {
         if t.path.is_ident("instruction") {
@@ -306,11 +312,23 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         } else if t.path.is_ident("assume_types") {
             let expr = syn::parse2::<Expr>(t.tokens)?;
             let ident = arg_item.ident.clone();
-            let generics =arg_item.generics.clone();
-            assume_types_impl = Some(quote!{
+            let generics = arg_item.generics.clone();
+            assume_types_impl = Some(quote! {
                 impl #generics #ident #generics {
                     #[deny(dead_code)]
                     fn _assume_types(&self, remaining_accounts: &[AccountInfo]) {
+                        #expr
+                    }
+                }
+            });
+        } else if t.path.is_ident("post_assume_types") {
+            let expr = syn::parse2::<Expr>(t.tokens)?;
+            let ident = arg_item.ident.clone();
+            let generics = arg_item.generics.clone();
+            post_assume_types_impl = Some(quote! {
+                impl #generics #ident #generics {
+                    #[deny(dead_code)]
+                    fn _post_assume_types(&self, remaining_accounts: &mut FastVec<AccountInfo>) {
                         #expr
                     }
                 }
@@ -427,7 +445,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     };
 
     let pre_invariant_impl = create_pre_invariants(&val, assume_types_impl.is_some());
-    let post_invariant_impl = create_post_invariants(&val);
+    let post_invariant_impl = create_post_invariants(&val, post_assume_types_impl.is_some());
     // println!("post invariants for {} {}", ident, post_invariant_impl);
     let constraint_checks = create_constraints_checks(&val, &arg_names, &arg_types);
 
@@ -436,6 +454,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
     let to_account_metas = to_account_metas::generate(&val);
     let to_account_infos = to_account_infos::generate(&val);
     let assume_types_impl = assume_types_impl.unwrap_or_default();
+    let post_assume_types_impl = post_assume_types_impl.unwrap_or_default();
 
     let res = quote! {
         #bumps_impl
@@ -449,6 +468,7 @@ pub fn derive_accounts(item: TokenStream) -> Result<TokenStream> {
         #to_account_metas
         #to_account_infos
         #assume_types_impl
+        #post_assume_types_impl
     };
 
     // println!("{}", res);

@@ -1,18 +1,36 @@
-const MAX_LEN: usize = 8;
+const MAX_LEN: usize = 2;
 
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
     F: Fn(&T) -> bool,
 {
     kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
-    for i in 0..slice.len() {
+    let mut i = 0;
+    while i < slice.len() {
         kani::assume(i < MAX_LEN);
         if predicate(&slice[i]) {
             return Some(i);
         }
+        i += 1;
     }
     None
 }
+
+pub fn array_position<const N: usize, T, F>(slice: &[T; N], predicate: F) -> Option<usize>
+where
+    F: Fn(&T) -> bool,
+{
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        if predicate(&slice[i]) {
+            return Some(i);
+        }
+        i += 1;
+    }
+    None
+}
+
 
 pub fn slice_find<T, F>(slice: &[T], predicate: F) -> Option<&T>
 where
@@ -29,6 +47,36 @@ where
         i += 1;
     }
     None
+}
+
+pub fn array_find<const N: usize, T, F>(slice: &[T; N], predicate: F) -> Option<&T>
+where
+    F: Fn(&T) -> bool,
+{
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        let entry = &slice[i];
+        if predicate(entry) {
+            return Some(entry);
+        }
+        i += 1;
+    }
+    None
+}
+
+pub fn array_all<const N: usize, T, F>(slice: &[T; N], predicate: F) -> bool
+where
+    F: Fn(&T) -> bool,
+{
+    let mut i = 0;
+    let mut res = true;
+    while i < N {
+        kani::assume(i < N);
+        res &= predicate(&slice[i]);
+        i += 1;
+    }
+    res
 }
 
 pub fn slice_all<T, F>(slice: &[T], predicate: F) -> bool

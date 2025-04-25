@@ -10,13 +10,12 @@ use syn::{
     ExprUnary, ExprUnsafe, ExprWhile, ExprYield, FnArg, GenericArgument, Generics, Item, ItemFn,
     ItemMod, Pat, PatType, PathArguments, Stmt, Type,
 };
-use convert_case::{Case, Casing};
-use heck::{ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
+use heck::ToUpperCamelCase;
 use anchor_syn::{Program, codegen::program::accounts::generate as generate_accounts, codegen::program::instruction::generate as generate_instructions};
 
 use crate::stubs::{stubs_def, stubs_attr};
 
-const KANI_UNWIND_AMOUNT: usize = 100;
+const KANI_UNWIND_AMOUNT: usize = 50;
 
 fn get_ctx_type(ctx_param: &PatType) -> syn::Result<Punctuated<GenericArgument, Comma>> {
     let Type::Path(pa) = ctx_param.ty.as_ref() else {

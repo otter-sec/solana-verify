@@ -1,5 +1,5 @@
-use proc_macro2::{Group, Ident, Span, TokenStream};
-use quote::{quote, ToTokens, format_ident};
+use proc_macro2::{Ident, TokenStream};
+use quote::{quote, format_ident};
 
 fn stubs_mod_name(name: &Ident) -> Ident {
     format_ident!("{}_stubs", name)

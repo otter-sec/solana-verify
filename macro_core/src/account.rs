@@ -8,8 +8,8 @@ use anchor_syn::{
 };
 use anyhow::Result;
 use proc_macro2::{Group, Ident, Span, TokenStream};
-use quote::{format_ident, quote, ToTokens};
-use syn::{parse::ParseStream, Expr, ExprType, ItemStruct, Lit, LitStr};
+use quote::{quote, ToTokens};
+use syn::{Expr, ExprType, ItemStruct, Lit, LitStr};
 
 pub fn declare_id(id_tokens: TokenStream) -> TokenStream {
     let account_id_str = syn::parse2::<LitStr>(id_tokens)

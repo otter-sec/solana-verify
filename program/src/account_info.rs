@@ -156,6 +156,17 @@ impl<'a> AccountInfo<'a> {
         *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
     }
 
+    pub fn init_with<
+        T: Sized + kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static,
+    >(
+        &self,
+        value: T,
+    ) {
+        let mut d = unsafe { &mut *self.deserialized };
+        assert!(d.is_none());
+        *d = Some(RefCell::new(Box::leak(Box::new(value)) as *mut _));
+    }
+
     pub fn assert_init_as<
         T: Sized + kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static,
     >(

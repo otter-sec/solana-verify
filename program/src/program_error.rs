@@ -104,8 +104,16 @@ impl PrintProgramError for ProgramError {
     }
 }
 
+#[cfg(not(kani))]
 impl From<ProgramError> for crate::error::Error {
     fn from(value: ProgramError) -> Self {
         crate::error::Error::CustomError(value.to_string())
+    }
+}
+
+#[cfg(kani)]
+impl From<ProgramError> for crate::error::Error {
+    fn from(value: ProgramError) -> Self {
+        crate::error::Error::Generic
     }
 }

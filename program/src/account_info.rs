@@ -92,8 +92,6 @@ impl<'a> AccountInfo<'a> {
         self.assert_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
-        let t = unsafe { &**r.borrow() };
-
         RefMut::map(r.borrow_mut(), |x| {
             unsafe { &mut **x }
                 .as_any_mut()

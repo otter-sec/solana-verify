@@ -35,6 +35,14 @@ pub fn stubs_def(name: &Ident) -> TokenStream {
             ) -> Result<(), anchor_lang::Error> {
                 Ok(())
             }
+
+            fn str_from_utf8(v: &[u8]) -> Result<&str, core::str::Utf8Error> {
+                kani::assume(v.iter().all(|c| c.is_ascii()));
+                // SAFETY: We check above that the string is ASCII
+                unsafe {
+                    Ok(core::str::from_utf8_unchecked(v))
+                }
+            }
         }
     }
 }
@@ -47,5 +55,7 @@ pub fn stubs_attr(name: &Ident) -> TokenStream {
     quote! {
         #[kani::stub(crate::utils::fraction::U256::div_mod, #mod_name::div_mod)]
         #[kani::stub(crate::lending_market::farms_ixs::cpi_set_stake_delegated, #mod_name::cpi_set_stake_delegated)]
+        #[kani::stub(core::str::from_utf8, #mod_name::str_from_utf8)]
+        #[kani::stub(std::str::from_utf8, #mod_name::str_from_utf8)]
     }
 }

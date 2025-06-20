@@ -372,9 +372,16 @@ impl std::fmt::Display for ErrorCode {
 }
 
 
+#[cfg(not(kani))]
 impl From<ErrorCode> for Error {
     fn from(error_code: ErrorCode) -> Self {
         crate::error::Error::CustomError(error_code.to_string())
     }
 }
 
+#[cfg(kani)]
+impl From<ErrorCode> for Error {
+    fn from(error_code: ErrorCode) -> Self {
+        crate::error::Error::Generic
+    }
+}

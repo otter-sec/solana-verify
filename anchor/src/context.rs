@@ -36,20 +36,6 @@ pub struct ConcreteContext<'a, 'b, 'c, 'info, T: Bumps> {
     _c: PhantomData<&'c u8>,
 }
 
-pub struct DummyContext<'info, T: Bumps + Clone> {
-    pub accounts: T,
-    pub remaining_accounts: Vec<AccountInfo<'info>>
-}
-
-impl<'info, T: Bumps + Clone> DummyContext<'info, T> {
-    pub fn new(accounts: T, remaining_accounts: Vec<AccountInfo<'info>>) -> Self {
-        Self {
-            accounts,
-            remaining_accounts
-        }
-    }
-}
-
 impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
     pub fn to_ctx<'a>(&'a self) -> Context<'a, 'a, 'a, 'info, T> {
         Context {
@@ -64,16 +50,13 @@ impl<'info, T: Bumps> ConcreteContext<'_, '_, '_, 'info, T> {
 const MAX_REMAINING_ACCOUNTS: usize = 0;
 
 impl<'a, 'info, T: Bumps + Clone> ConcreteContext<'_, '_, '_, 'info, T> {
-    pub fn clone_as_dummy(&'a self) -> DummyContext<'info, T> {
+    pub fn clone_for_transition(&'a self) -> (T, Vec<AccountInfo<'info>>) {
         kani::assume(self.remaining_accounts.len() <= MAX_REMAINING_ACCOUNTS);
         let mut remaining_accounts = self.remaining_accounts.clone();
         kani::assume(remaining_accounts.len() <= MAX_REMAINING_ACCOUNTS);
         slice_for_each_mut(&mut remaining_accounts, |x| x.clone_data());
 
-        DummyContext {
-            accounts: self.accounts.clone(),
-            remaining_accounts,
-        }
+        (self.accounts.clone(), remaining_accounts)
     }
 }
 

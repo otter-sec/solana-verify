@@ -215,10 +215,10 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
                         (None, true) => {
-                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(&old.accounts.#ident.as_ref().unwrap().to_account_info(), &remaining_accounts)) }
+                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(&old.#ident.as_ref().unwrap().to_account_info(), &remaining_accounts)) }
                         }
                         (None, false) => {
-                            quote! { slf.#ident.check_transition_invariant(&old.accounts.#ident.to_account_info(), &remaining_accounts) }
+                            quote! { slf.#ident.check_transition_invariant(&old.#ident.to_account_info(), &remaining_accounts) }
                         }
                         _ => quote! {},
                     };
@@ -227,7 +227,7 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
                 }
                 AccountField::CompositeField(_) => (
                     quote! {
-                        slf.#ident.__post_invariants(&anchor_lang::context::DummyContext::new(old.accounts.#ident.clone(), old.remaining_accounts.to_vec()))
+                        slf.#ident.__post_invariants(&old.#ident, &remaining_accounts)
                     },
                     quote! { () },
                 ),
@@ -246,7 +246,7 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
 
     let assert_initialized = quote! {
         kani::assert(
-            crate::solana_program::verify_helpers::slice_all(&old.remaining_accounts, |acc| acc.is_initialized()),
+            crate::solana_program::verify_helpers::slice_all(&remaining_accounts, |acc| acc.is_initialized()),
             "all accounts must be initialized"
         );
     };
@@ -255,7 +255,7 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
         quote! {
             impl #generics #ident #generics
             where Self: 'static  {
-                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
+                pub fn __post_invariants(&self, old: &Self, remaining_accounts: &[AccountInfo<'static>]) {
                     #assert_initialized
                 }
             }
@@ -264,17 +264,17 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
         quote! {
             impl #generics #ident #generics
             where Self: 'static {
-                pub fn __post_invariants(&self, old: &anchor_lang::context::DummyContext<Self>) {
+                pub fn __post_invariants(&self, old: &Self, remaining_accounts: &[AccountInfo<'static>]) {
                     #assert_initialized;
                     use shared::Invariant;
                     // SAFETY: Nah
                     let slf: &'static Self = unsafe {
                         std::mem::transmute(self)
                     };
-                    let old: &'static anchor_lang::context::DummyContext<Self> = unsafe {
+                    let old: &'static Self = unsafe {
                         std::mem::transmute(old)
                     };
-                    let mut remaining_accounts = old.remaining_accounts.to_vec();
+                    let mut remaining_accounts = remaining_accounts.into_iter().cloned().collect::<anchor_lang::prelude::FastVec<_>>();
                     #post_assume_types
                     #(#post);*
                     ;

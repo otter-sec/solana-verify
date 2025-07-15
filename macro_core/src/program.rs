@@ -172,18 +172,12 @@ fn create_verify(
 
             // FIXME: Refactor to work with `assume`
             conc.to_ctx().accounts.__pre_invariants(&ctx.remaining_accounts);
-            let dummy = conc.clone_as_dummy();
+            let (accounts, remaining_accounts) = conc.clone_for_transition();
 
             let result = #mod_name::#function_name(#(#parameter_names),*);
 
             if !result.is_err() {
-                conc.to_ctx().accounts.__post_invariants(&dummy)
-            }
-
-            let before = &dummy.accounts;
-            let after = conc.to_ctx().accounts;
-
-            if !result.is_err() {
+                conc.to_ctx().accounts.__post_invariants(&accounts, &remaining_accounts);
                 kani::assert(#postcondition, concat!("Fail C: ", stringify!(#postcondition)));
             }
         }

@@ -43,6 +43,20 @@ pub fn stubs_def(name: &Ident) -> TokenStream {
                     Ok(core::str::from_utf8_unchecked(v))
                 }
             }
+
+            fn memchr(x: u8, text: &[u8]) -> Option<usize> {
+                let mut i = 0;
+
+                kani::assume(text.len() < 32);
+                while i < text.len() {
+                    if text[i] == x {
+                        return Some(i);
+                    }
+                    i += 1;
+                }
+
+                None
+            }
         }
     }
 }
@@ -57,5 +71,6 @@ pub fn stubs_attr(name: &Ident) -> TokenStream {
         #[kani::stub(crate::lending_market::farms_ixs::cpi_set_stake_delegated, #mod_name::cpi_set_stake_delegated)]
         #[kani::stub(core::str::from_utf8, #mod_name::str_from_utf8)]
         #[kani::stub(std::str::from_utf8, #mod_name::str_from_utf8)]
+        #[kani::stub(core::slice::memchr::memchr, #mod_name::memchr)]
     }
 }

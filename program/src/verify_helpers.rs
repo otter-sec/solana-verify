@@ -1,10 +1,13 @@
-const MAX_LEN: usize = 2;
+const MAX_LEN: usize = 10;
 
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
     F: Fn(&T) -> bool,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
@@ -31,18 +34,39 @@ where
     None
 }
 
-
 pub fn slice_find<T, F>(slice: &[T], predicate: F) -> Option<&T>
 where
     F: Fn(&T) -> bool,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
         let entry = &slice[i];
         if predicate(entry) {
             return Some(entry);
+        }
+        i += 1;
+    }
+    None
+}
+
+pub fn slice_enumerate_find_mut<T, F>(slice: &mut [T], predicate: F) -> Option<(usize, &mut T)>
+where
+    F: Fn((usize, &mut T)) -> bool,
+{
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i < MAX_LEN);
+        if predicate((i, &mut slice[i])) {
+            return Some((i, &mut slice[i]));
         }
         i += 1;
     }
@@ -83,7 +107,10 @@ pub fn slice_all<T, F>(slice: &[T], predicate: F) -> bool
 where
     F: Fn(&T) -> bool,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut i = 0;
     let mut res = true;
     while i < slice.len() {
@@ -98,7 +125,10 @@ pub fn slice_for_each<T, F>(slice: &[T], mut f: F)
 where
     F: FnMut(&T),
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
@@ -107,11 +137,34 @@ where
     }
 }
 
+pub fn slice_for_each_zip<T, U, F>(slice1: &[T], slice2: &[U], mut f: F)
+where
+    F: FnMut((&T, &U)),
+{
+    kani::assert(
+        slice1.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    kani::assert(
+        slice2.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    let mut i = 0;
+    while i < slice1.len() && i < slice2.len() {
+        kani::assume(i < MAX_LEN);
+        f((&slice1[i], &slice2[i]));
+        i += 1;
+    }
+}
+
 pub fn slice_for_each_mut<T, F>(slice: &mut [T], mut f: F)
 where
     F: FnMut(&mut T),
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
@@ -125,7 +178,10 @@ where
     F: Fn(&'a T) -> Option<U>,
     U: 'a,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut vec = Vec::new();
     let mut i = 0;
     while i < slice.len() {
@@ -139,11 +195,36 @@ where
     vec
 }
 
+pub fn slice_enumerate_filter_map<'a, T, U, F>(slice: &'a [T], predicate: F) -> Vec<U>
+where
+    F: Fn((usize, &'a T)) -> Option<U>,
+    U: 'a,
+{
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i < MAX_LEN);
+        let entry = &slice[i];
+        if let Some(mapped) = predicate((i, entry)) {
+            vec.push(mapped);
+        }
+        i += 1;
+    }
+    vec
+}
+
 pub fn slice_filter_count<'a, T, F>(slice: &'a [T], predicate: F) -> usize
 where
     F: Fn(&T) -> bool,
 {
-    kani::assert(slice.len() <= MAX_LEN, "Slice should be bounded to <= MAX_LEN");
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
     let mut count: usize = 0;
     let mut i = 0;
     while i < slice.len() {
@@ -155,4 +236,19 @@ where
         i += 1;
     }
     count
+}
+
+pub fn slice_reverse<T>(slice: &mut [T]) {
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    let mut count: usize = 0;
+    let mut i = 0;
+    let half_len = slice.len() / 2;
+    while i < half_len {
+        kani::assume(i < MAX_LEN);
+        kani::assume(slice.len() - 1- i < MAX_LEN);
+        slice.swap(slice.len() - 1 - i, i);
+    }
 }

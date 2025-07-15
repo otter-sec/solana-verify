@@ -215,12 +215,12 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
 
                     let transition_invariant = match (constraints.init.as_ref(), f.is_optional) {
                         (None, true) => {
-                            quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(&old.#ident.as_ref().unwrap().to_account_info(), &remaining_accounts)) }
+                            Some(quote! { slf.#ident.as_ref().map(|x| x.check_transition_invariant(&old.#ident.as_ref().unwrap().to_account_info(), &remaining_accounts)) })
                         }
                         (None, false) => {
-                            quote! { slf.#ident.check_transition_invariant(&old.#ident.to_account_info(), &remaining_accounts) }
+                            Some(quote! { slf.#ident.check_transition_invariant(&old.#ident.to_account_info(), &remaining_accounts) })
                         }
-                        _ => quote! {},
+                        _ => None,
                     };
 
                     (invariant, transition_invariant)
@@ -229,12 +229,14 @@ fn create_post_invariants(val: &AccountsStruct, has_post_assume_types: bool) -> 
                     quote! {
                         slf.#ident.__post_invariants(&old.#ident, &remaining_accounts)
                     },
-                    quote! { () },
+                    None,
                 ),
             };
 
             post.push(invariant);
-            post.push(transition_invariant);
+            if let Some(transition_invariant) = transition_invariant {
+                post.push(transition_invariant);
+            }
         }
     }
 

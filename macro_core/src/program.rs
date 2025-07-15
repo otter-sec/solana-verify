@@ -149,10 +149,9 @@ fn create_verify(
     postcondition: Option<Attribute>,
 ) -> syn::Result<TokenStream> {
 
-    let postcondition = match postcondition {
-        Some(x) => quote! { (#x) },
-        None => quote! { true }
-    };
+    let postcondition = postcondition.map(|cond| quote! {
+        kani::assert(#cond, concat!("Postcondition Failed: ", stringify!(#cond)))
+    });
 
     let proof_name = format_ident!("verify_{}", function_name, span = function_name.span());
 
@@ -178,7 +177,7 @@ fn create_verify(
 
             if !result.is_err() {
                 conc.to_ctx().accounts.__post_invariants(&accounts, &remaining_accounts);
-                kani::assert(#postcondition, concat!("Fail C: ", stringify!(#postcondition)));
+                #postcondition
             }
         }
     };

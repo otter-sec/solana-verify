@@ -1,4 +1,6 @@
-const MAX_LEN: usize = 10;
+/// Default maximum length for slices used in verification helpers.
+/// If we're working with an array, use an `array_` variant instead.
+const MAX_LEN: usize = 2;
 
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
@@ -73,6 +75,21 @@ where
     None
 }
 
+pub fn array_enumerate_find_mut<const N: usize, T, F>(slice: &mut [T; N], predicate: F) -> Option<(usize, &mut T)>
+where
+    F: Fn((usize, &mut T)) -> bool,
+{
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        if predicate((i, &mut slice[i])) {
+            return Some((i, &mut slice[i]));
+        }
+        i += 1;
+    }
+    None
+}
+
 pub fn array_find<const N: usize, T, F>(slice: &[T; N], predicate: F) -> Option<&T>
 where
     F: Fn(&T) -> bool,
@@ -132,6 +149,18 @@ where
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
+        f(&slice[i]);
+        i += 1;
+    }
+}
+
+pub fn array_for_each<const N: usize, T, F>(slice: &[T; N], mut f: F)
+where
+    F: FnMut(&T),
+{
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
         f(&slice[i]);
         i += 1;
     }
@@ -208,6 +237,24 @@ where
     let mut i = 0;
     while i < slice.len() {
         kani::assume(i < MAX_LEN);
+        let entry = &slice[i];
+        if let Some(mapped) = predicate((i, entry)) {
+            vec.push(mapped);
+        }
+        i += 1;
+    }
+    vec
+}
+
+pub fn array_enumerate_filter_map<'a, const N: usize, T, U, F>(slice: &'a [T; N], predicate: F) -> Vec<U>
+where
+    F: Fn((usize, &'a T)) -> Option<U>,
+    U: 'a,
+{
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
         let entry = &slice[i];
         if let Some(mapped) = predicate((i, entry)) {
             vec.push(mapped);

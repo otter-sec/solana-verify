@@ -108,7 +108,6 @@ impl Default for &Pubkey {
     }
 }
 
-#[cfg(any(kani, feature = "kani"))]
 impl Pubkey {
     pub fn find_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> (Pubkey, u8) {
         (kani::any(), kani::any())
@@ -121,7 +120,6 @@ impl AsRef<[u8]> for Pubkey {
     }
 }
 
-#[cfg(any(kani, feature = "kani"))]
 impl kani::Arbitrary for Pubkey {
     fn any() -> Self {
         Self { t: [kani::any()], _padding: unsafe { std::mem::zeroed() }}
@@ -132,7 +130,6 @@ const MAX_KEYS: usize = 100;
 pub static mut KEYS: [Pubkey; MAX_KEYS] = [Pubkey { t: [0], _padding: unsafe { std::mem::zeroed() } }; MAX_KEYS];
 pub static mut KEYS_IDX: usize = 0;
 
-#[cfg(any(kani, feature = "kani"))]
 pub fn kani_new_pubkey() -> &'static Pubkey {
     unsafe {
         kani::assert(

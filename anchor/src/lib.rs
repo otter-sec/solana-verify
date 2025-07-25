@@ -133,23 +133,37 @@ macro_rules! msg {
     ($($arg:tt)*) => {};
 }
 
+// #[macro_export]
+// macro_rules! require {
+//     ($invariant:expr, $error:tt $(,)?) => {
+//         if !($invariant) {
+//             return Err(anchor_lang;:Error::Generic);
+//         }
+//     };
+//     ($invariant:expr, $error:expr $(,)?) => {
+//         if !($invariant) {
+//             return Err(anchor_lang::Error::Generic);
+//         }
+//     };
+//     // when no error is provided
+//     ($invariant:expr $(,)?) => {
+//         if !($invariant) {
+//             return Err(anchor_lang::Error::Generic);
+//         }
+//     };
+// }
+
 #[macro_export]
 macro_rules! require {
     ($invariant:expr, $error:tt $(,)?) => {
-        if !($invariant) {
-            return Err(anchor_lang;:Error::Generic);
-        }
+        kani::assume($invariant);
     };
     ($invariant:expr, $error:expr $(,)?) => {
-        if !($invariant) {
-            return Err(anchor_lang::Error::Generic);
-        }
+        kani::assume($invariant);
     };
     // when no error is provided
     ($invariant:expr $(,)?) => {
-        if !($invariant) {
-            return Err(anchor_lang::Error::Generic);
-        }
+        kani::assume($invariant);
     };
 }
 
@@ -193,43 +207,72 @@ macro_rules! require_neq {
     };
 }
 
+// #[macro_export]
+// macro_rules! require_keys_eq {
+//     ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
+//         if $key_1 != $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+//     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
+//         if $key_1 != $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+//     // when no error is provided
+//     ($key_1:expr, $key_2:expr $(,)?) => {
+//         if $key_1 != $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+// }
+
 #[macro_export]
 macro_rules! require_keys_eq {
     ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
-        if $key_1 != $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 == $key_2);
     };
     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
-        if $key_1 != $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 == $key_2);
     };
     // when no error is provided
     ($key_1:expr, $key_2:expr $(,)?) => {
-        if $key_1 != $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 == $key_2);
     };
 }
+
+
+// #[macro_export]
+// macro_rules! require_keys_neq {
+//     ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
+//         if $key_1 == $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+//     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
+//         if $key_1 == $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+//     // when no error is provided
+//     ($key_1:expr, $key_2:expr $(,)?) => {
+//         if $key_1 == $key_2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+// }
 
 #[macro_export]
 macro_rules! require_keys_neq {
     ($key_1:expr, $key_2:expr, $error:tt $(,)?) => {
-        if $key_1 == $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 != $key_2);
     };
     ($key_1:expr, $key_2:expr, $error:expr $(,)?) => {
-        if $key_1 == $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 != $key_2);
     };
     // when no error is provided
     ($key_1:expr, $key_2:expr $(,)?) => {
-        if $key_1 == $key_2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume($key_1 != $key_2);
     };
 }
 
@@ -249,17 +292,27 @@ macro_rules! require_gt {
     };
 }
 
+// #[macro_export]
+// macro_rules! require_gte {
+//     ($value1: expr, $value2: expr, $error_code: expr $(,)?) => {
+//         if $value1 < $value2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+//     ($value1: expr, $value2: expr $(,)?) => {
+//         if $value1 < $value2 {
+//             return Err(solana_program::error::Error::Generic);
+//         }
+//     };
+// }
+
 #[macro_export]
 macro_rules! require_gte {
     ($value1: expr, $value2: expr, $error_code: expr $(,)?) => {
-        if $value1 < $value2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume(!($value1 < $value2));
     };
     ($value1: expr, $value2: expr $(,)?) => {
-        if $value1 < $value2 {
-            return Err(solana_program::error::Error::Generic);
-        }
+        kani::assume(!($value1 < $value2));
     };
 }
 

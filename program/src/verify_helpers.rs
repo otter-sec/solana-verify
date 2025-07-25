@@ -1,6 +1,24 @@
+use std::ops::Add;
+use super::vec::fast::Vec;
+
 /// Default maximum length for slices used in verification helpers.
 /// If we're working with an array, use an `array_` variant instead.
 const MAX_LEN: usize = 2;
+
+pub fn array_map_sum<const N: usize, T, A, F>(slice: &[T; N], predicate: F) -> A
+where
+    F: Fn(&T) -> A,
+    A: Add<Output = A> + Default
+{
+    let mut total = A::default();
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        total = total + predicate(&slice[i]);
+        i += 1;
+    }
+    total
+}
 
 pub fn slice_position<T, F>(slice: &[T], predicate: F) -> Option<usize>
 where
@@ -75,7 +93,10 @@ where
     None
 }
 
-pub fn array_enumerate_find_mut<const N: usize, T, F>(slice: &mut [T; N], predicate: F) -> Option<(usize, &mut T)>
+pub fn array_enumerate_find_mut<const N: usize, T, F>(
+    slice: &mut [T; N],
+    predicate: F,
+) -> Option<(usize, &mut T)>
 where
     F: Fn((usize, &mut T)) -> bool,
 {
@@ -202,6 +223,85 @@ where
     }
 }
 
+pub fn slice_map<'a, T, U, F>(slice: &'a [T], predicate: F) -> Vec<U>
+where
+    F: Fn(&'a T) -> U,
+    U: 'a,
+{
+    kani::assert(
+        slice.len() <= MAX_LEN,
+        "Slice should be bounded to <= MAX_LEN",
+    );
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < slice.len() {
+        kani::assume(i < MAX_LEN);
+        let entry = &slice[i];
+        vec.push(predicate(entry));
+        i += 1;
+    }
+    vec
+}
+
+pub fn array_filter<'a, const N: usize, T, F>(slice: &'a [T; N], predicate: F) -> Vec<&'a T>
+where
+    F: Fn(&'a T) -> bool,
+{
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        let entry = &slice[i];
+        if predicate(entry) {
+            vec.push(entry);
+        }
+        i += 1;
+    }
+    vec
+}
+
+pub fn array_filter_mut<'a, const N: usize, T, F>(
+    slice: &'a mut [T; N],
+    predicate: F,
+) -> Vec<&'a mut T>
+where
+    F: for<'b> Fn(&'b mut T) -> bool,
+{
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        // SAFETY: This is in bounds due to the loop condition, and the mutable borrows are disjoint
+        let entry = unsafe { &mut *slice.as_mut_ptr().add(i) };
+        if predicate(entry) {
+            vec.push(entry);
+        }
+        i += 1;
+    }
+    vec
+}
+
+pub fn array_enumerate_filter_mut<'a, const N: usize, T, F>(
+    slice: &'a mut [T; N],
+    predicate: F,
+) -> Vec<(usize, &'a mut T)>
+where
+    F: for<'b> Fn((usize, &'b mut T)) -> bool,
+{
+    let mut vec = Vec::new();
+    let mut i = 0;
+    while i < N {
+        kani::assume(i < N);
+        // SAFETY: This is in bounds due to the loop condition, and the mutable borrows are disjoint
+        let entry = unsafe { &mut *slice.as_mut_ptr().add(i) };
+        if predicate((i, entry)) {
+            vec.push((i, entry));
+        }
+        i += 1;
+    }
+    vec
+}
+
 pub fn slice_filter_map<'a, T, U, F>(slice: &'a [T], predicate: F) -> Vec<U>
 where
     F: Fn(&'a T) -> Option<U>,
@@ -246,7 +346,10 @@ where
     vec
 }
 
-pub fn array_enumerate_filter_map<'a, const N: usize, T, U, F>(slice: &'a [T; N], predicate: F) -> Vec<U>
+pub fn array_enumerate_filter_map<'a, const N: usize, T, U, F>(
+    slice: &'a [T; N],
+    predicate: F,
+) -> Vec<U>
 where
     F: Fn((usize, &'a T)) -> Option<U>,
     U: 'a,
@@ -295,7 +398,7 @@ pub fn slice_reverse<T>(slice: &mut [T]) {
     let half_len = slice.len() / 2;
     while i < half_len {
         kani::assume(i < MAX_LEN);
-        kani::assume(slice.len() - 1- i < MAX_LEN);
+        kani::assume(slice.len() - 1 - i < MAX_LEN);
         slice.swap(slice.len() - 1 - i, i);
     }
 }

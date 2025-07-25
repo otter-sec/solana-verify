@@ -81,7 +81,7 @@ impl Pubkey {
     }
 
     #[cfg(any(kani, feature = "kani"))]
-    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Result<Pubkey, Box<dyn std::error::Error>> {
+    pub fn create_program_address(_seeds: &[&[u8]], _program_id: &Pubkey) -> Result<Pubkey, std::convert::Infallible> {
         Ok(kani::any())
     }
 }

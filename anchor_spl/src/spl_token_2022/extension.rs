@@ -125,7 +125,7 @@ fn check_min_len_and_not_multisig(input: &[u8], minimum_len: usize) -> Result<()
 }
 
 impl<'data, S: BaseState + kani::Arbitrary> StateWithExtensions<'data, S> {
-    pub fn unpack(input: &'data SparseSlice<u8>) -> Result<Self, ProgramError> {
+    pub fn unpack(input: &'data [u8]) -> Result<Self, ProgramError> {
         // check_min_len_and_not_multisig(input, S::SIZE_OF)?;
         // let (base_data, rest) = input.split_at(S::SIZE_OF);
         //

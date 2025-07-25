@@ -1,5 +1,8 @@
 use core::slice;
-use std::ops;
+use std::{
+    mem::{ManuallyDrop, MaybeUninit},
+    ops,
+};
 
 use hex::FromHex;
 
@@ -8,9 +11,10 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 const VEC_SIZE: usize = 10;
 
-#[derive(Clone, Copy, Debug, BorshSerialize, BorshDeserialize, Eq, PartialEq)]
+// FIXME: MaybeUninit means values won't get dropped, but this might be good for solve performance
+#[derive(Debug)]
 pub struct Vec<T> {
-    pub data: [T; VEC_SIZE],
+    pub data: [MaybeUninit<T>; VEC_SIZE],
     pub size: usize,
 }
 
@@ -28,12 +32,12 @@ pub struct VecIntoIterator<T> {
 impl<T: Default> Default for Vec<T> {
     fn default() -> Self {
         Vec {
-            data: Default::default(),
+            data: [const { MaybeUninit::uninit() }; VEC_SIZE],
             size: 0,
         }
     }
 }
-impl <T: Default> Vec<T> {
+impl<T: Default> Vec<T> {
     pub fn append(&mut self, other: &mut Self) {
         for a in &mut other[..] {
             self.push(std::mem::take(a));
@@ -41,24 +45,62 @@ impl <T: Default> Vec<T> {
     }
 }
 
+impl<T: PartialEq> PartialEq for Vec<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl<T: BorshSerialize> BorshSerialize for Vec<T> {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        self.as_slice().serialize(writer)
+    }
+}
+
+impl<T: BorshDeserialize> BorshDeserialize for Vec<T> {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        kani::assert(false, "deserialization not implemented");
+        unreachable!()
+    }
+}
+
+impl<T: Eq> Eq for Vec<T> {}
+
+impl<T: Copy> Copy for Vec<T> {}
+
+impl<T: Clone> Clone for Vec<T> {
+    fn clone(&self) -> Self {
+        let mut data = [const { MaybeUninit::uninit() }; VEC_SIZE];
+        let mut i = 0;
+        while i < VEC_SIZE {
+            kani::assume(i < VEC_SIZE);
+            if i < self.len() {
+                data[i] = unsafe { MaybeUninit::new(self.get_unchecked(i).clone()) };
+            }
+            i += 1;
+        }
+
+        Self {
+            data,
+            size: self.size,
+        }
+    }
+}
 
 impl<T> Vec<T> {
-    pub fn new() -> Vec<T>
-    where
-        T: Default,
-    {
-        Default::default()
+    pub fn new() -> Vec<T> {
+        Vec {
+            data: [const { MaybeUninit::uninit() }; VEC_SIZE],
+            size: 0,
+        }
     }
 
-    pub fn with_capacity(_s: usize) -> Vec<T>
-    where
-        T: Default + Copy,
-    {
+    pub fn with_capacity(_s: usize) -> Vec<T> {
         Vec::new()
     }
 
     pub fn push(&mut self, t: T) {
-        self.data[self.size] = t;
+        self.data[self.size] = MaybeUninit::new(t);
         self.size += 1;
     }
 
@@ -73,7 +115,7 @@ impl<T> Vec<T> {
             panic!("oob");
         }
 
-        let mut v = std::mem::replace(&mut self.data[pos], t);
+        let mut v = std::mem::replace(&mut self.data[pos], MaybeUninit::new(t));
         for i in pos + 1..self.size + 1 {
             v = std::mem::replace(&mut self.data[i], v);
         }
@@ -92,12 +134,18 @@ impl<T> Vec<T> {
         VecIterator { vec: self, idx: 0 }
     }
 
+    #[inline(always)]
     pub fn get(&self, idx: usize) -> Option<&T> {
         if idx >= self.size {
             return None;
         }
 
-        Some(&self.data[idx])
+        Some(unsafe { self.data[idx].assume_init_ref() })
+    }
+
+    #[inline(always)]
+    pub unsafe fn get_unchecked(&self, idx: usize) -> &T {
+        unsafe { self.data[idx].assume_init_ref() }
     }
 
     pub fn contains(&self, t: &T) -> bool
@@ -105,7 +153,7 @@ impl<T> Vec<T> {
         T: PartialEq,
     {
         for i in 0..self.size {
-            if &self.data[i] == t {
+            if unsafe { self.get_unchecked(i) } == t {
                 return true;
             }
         }
@@ -140,7 +188,7 @@ impl<T> Vec<T> {
         T: PartialEq,
     {
         for i in 0..self.size {
-            if &self.data[i] == t {
+            if unsafe { self.get_unchecked(i) } == t {
                 return Ok(i);
             }
         }
@@ -154,7 +202,7 @@ impl<T> Vec<T> {
         B: Ord,
     {
         for i in 0..self.size {
-            if f(&self.data[i]) == *b {
+            if f(unsafe { self.get_unchecked(i) }) == *b {
                 return Ok(i);
             }
         }
@@ -163,15 +211,15 @@ impl<T> Vec<T> {
 
     pub fn as_slice(&self) -> &[T] {
         kani::assume(self.size < VEC_SIZE);
-        &self.data[..self.size]
+        unsafe { std::mem::transmute(&self.data[..self.size]) }
     }
 
     pub fn extend_from_slice(&mut self, slice: &[T])
     where
-        T: Copy,
+        T: Clone,
     {
         for z in slice {
-            self.push(*z);
+            self.push(z.clone());
         }
     }
 
@@ -179,11 +227,24 @@ impl<T> Vec<T> {
     pub fn retain<F>(&mut self, mut _f: F)
     where
         F: FnMut(&T) -> bool,
-    {}
+    {
+    }
 
-    pub fn to_vec(&self) -> Self 
-    where T: Clone {
+    pub fn to_vec(&self) -> Self
+    where
+        T: Clone,
+    {
         self.clone()
+    }
+
+    /// Get `idx`, `kani::assume`ing it is present
+    pub fn get_assume(&self, idx: usize) -> &T {
+        kani::assert(idx < VEC_SIZE, "idx must be in bounds of vec size");
+        let Some(entry) = self.get(idx) else {
+            kani::assume(false);
+            unreachable!()
+        };
+        entry
     }
 }
 
@@ -193,7 +254,7 @@ impl<T> ops::Deref for Vec<T> {
     #[inline]
     fn deref(&self) -> &[T] {
         kani::assume(self.size < VEC_SIZE);
-        unsafe { slice::from_raw_parts(self.data.as_ptr(), self.size) }
+        unsafe { slice::from_raw_parts(self.data.as_ptr() as *const T, self.size) }
     }
 }
 
@@ -201,7 +262,7 @@ impl<T> ops::DerefMut for Vec<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [T] {
         kani::assume(self.size < VEC_SIZE);
-        unsafe { slice::from_raw_parts_mut(self.data.as_mut_ptr(), self.size) }
+        unsafe { slice::from_raw_parts_mut(self.data.as_mut_ptr() as *mut T, self.size) }
     }
 }
 
@@ -219,7 +280,8 @@ impl<'a, T> Iterator for VecIterator<'a, T> {
 
         kani::assume(idx < VEC_SIZE);
 
-        let res = &self.vec.data[idx];
+        // SAFETY: We use ManuallyDrop so it's fine to copy this out
+        let res = unsafe { self.vec.get_unchecked(idx) };
         Some(res)
     }
 }
@@ -233,7 +295,16 @@ impl<'a, T> IntoIterator for &'a Vec<T> {
     }
 }
 
-impl<T: Clone> Iterator for VecIntoIterator<T> {
+impl<T> IntoIterator for Vec<T> {
+    type Item = T;
+    type IntoIter = VecIntoIterator<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        VecIntoIterator { vec: self, idx: 0 }
+    }
+}
+
+impl<T> Iterator for VecIntoIterator<T> {
     type Item = T;
 
     #[inline(never)]
@@ -247,21 +318,13 @@ impl<T: Clone> Iterator for VecIntoIterator<T> {
 
         kani::assume(idx < VEC_SIZE);
 
-        let res = self.vec.data[idx].clone();
+        // SAFETY: We use ManuallyDrop so this is fine
+        let res = unsafe { std::ptr::read(self.vec.get_unchecked(idx) as *const T) };
         Some(res)
     }
 }
 
-impl<T: Clone> IntoIterator for Vec<T> {
-    type Item = T;
-    type IntoIter = VecIntoIterator<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        VecIntoIterator { vec: self, idx: 0 }
-    }
-}
-
-impl<T: Default> FromIterator<T> for Vec<T> {
+impl<T> FromIterator<T> for Vec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut v = Vec::new();
         for x in iter {
@@ -288,6 +351,27 @@ impl<T: Default, const N: usize> From<[T; N]> for Vec<T> {
             vec.push(element);
         }
         vec
+    }
+}
+
+impl<const N: usize, T> TryFrom<Vec<T>> for [T; N] {
+    type Error = ();
+
+    fn try_from(vec: Vec<T>) -> Result<Self, Self::Error> {
+        if vec.len() != N {
+            return Err(());
+        }
+        let vec = ManuallyDrop::new(vec);
+        let mut array: [MaybeUninit<T>; N] = [const { MaybeUninit::uninit() }; N];
+        let initialized = unsafe {
+            // SAFETY: vec.len() == array.len() and don't overlap
+            // vec is wrapped in ManuallyDropped and the elements will not be dropped
+            array
+                .as_mut_ptr()
+                .copy_from_nonoverlapping(vec.as_ptr() as *const MaybeUninit<_>, vec.len());
+            array.map(|elem| unsafe { elem.assume_init() })
+        };
+        Ok(initialized)
     }
 }
 

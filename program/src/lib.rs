@@ -1,5 +1,6 @@
 #![feature(trait_upcasting)]
 #![feature(const_type_name)]
+#![feature(trivial_bounds)]
 
 pub mod account_info;
 pub mod borsh;

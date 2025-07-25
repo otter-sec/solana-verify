@@ -4,7 +4,7 @@ use super::pubkey::Pubkey;
 use crate::instruction::AccountMeta;
 use crate::stupid_refcell::{StupidRef, StupidRefCell, StupidRefMut};
 pub use crate::Key;
-use crate::{pubkey::KEYS, vec::sparse::Vec, Result};
+use crate::{pubkey::KEYS, vec::fast::Vec, Result};
 
 #[cfg(not(feature = "verify"))]
 use crate::error::Error;
@@ -13,7 +13,7 @@ use core::cell::{Ref, RefCell, RefMut};
 
 use std::any::Any;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct AccountInfo<'a> {
     pub key: &'a Pubkey,
     pub is_signer: bool,
@@ -223,19 +223,19 @@ impl<'a> AccountInfo<'a> {
     }
 
     pub fn data_len(&self) -> usize {
-        self.data.borrow().len()
+        self.data.len()
     }
 
     pub fn try_data_len(&self) -> std::result::Result<usize, BorrowError> {
-        Ok(self.data.borrow().len())
+        Ok(self.data.len())
     }
 
     pub fn data_is_empty(&self) -> bool {
-        self.data.borrow().is_empty()
+        self.data.is_empty()
     }
 
     pub fn try_data_is_empty(&self) -> std::result::Result<bool, BorrowError> {
-        Ok(self.data.borrow().is_empty())
+        Ok(self.data.is_empty())
     }
 
     pub fn try_borrow_data(&self) -> Result<&[u8]> {

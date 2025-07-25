@@ -40,7 +40,7 @@ impl<T> Vec<T> {
     }
 
     pub fn push(&mut self, _: T) {
-        panic!("not allowed");
+        panic!("can't push to sparsevec");
     }
 
     pub fn len(&self) -> usize {
@@ -55,7 +55,7 @@ impl<T> Vec<T> {
     where
         T: PartialEq,
     {
-        panic!("not allowed");
+        panic!("can't contains on sparsevec");
     }
 
     pub fn sort(&mut self) {
@@ -70,14 +70,14 @@ impl<T> Vec<T> {
     where
         T: Copy,
     {
-        panic!("not allowed");
+        panic!("can't remove from sparsevec");
     }
 
     pub fn binary_search(&self, _: &T) -> Result<usize>
     where
         T: PartialEq,
     {
-        panic!("not allowed");
+        panic!("can't binary search sparsevec");
     }
 
     pub fn as_slice(&self) -> SparseSlice<T> {
@@ -108,37 +108,36 @@ impl<T> ops::Deref for Vec<T> {
 
     #[inline]
     fn deref(&self) -> &[T] {
-        panic!("not allowed");
+        panic!("can't deref sparsevec");
     }
 }
 
 impl<T> ops::DerefMut for Vec<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [T] {
-        panic!("not allowed");
+        panic!("can't derefmut to sparsevec");
     }
 }
 
 impl<T: Default> FromIterator<T> for Vec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(_: I) -> Self {
-        panic!("not allowed");
+        panic!("can't fromiterator sparsevec");
     }
 }
 
 impl<T: Default, const N: usize> From<[T; N]> for Vec<T> {
     fn from(_: [T; N]) -> Vec<T> {
-        panic!("not allowed");
+        panic!("can't from array to sparsevec");
     }
 }
 
 impl<T: Default> From<std::vec::Vec<T>> for Vec<T> {
     fn from(s: std::vec::Vec<T>) -> Vec<T> {
-        panic!("not allowed");
+        panic!("can't from vec to sparsevec");
         // Vec::new()
     }
 }
 
-#[cfg(any(kani, feature = "kani"))]
 impl<T: kani::Arbitrary + Default> kani::Arbitrary for Vec<T> {
     fn any() -> Self {
         Self {

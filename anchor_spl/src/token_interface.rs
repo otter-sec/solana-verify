@@ -40,10 +40,11 @@ pub mod accessor {
 
     // u8 = 1 byte starts from 3rd byte of data
     pub fn amount(account: &AccountInfo) -> Result<u64> {
-        let bytes = account.try_borrow_data()?;
-        let mut amount_bytes = [0u8; 8];
-        amount_bytes.copy_from_slice(&bytes[2..10]);
-        Ok(u64::from_le_bytes(amount_bytes))
+        // let bytes = account.try_borrow_data()?;
+        // let mut amount_bytes = [0u8; 8];
+        // amount_bytes.copy_from_slice(&bytes[2..10]);
+        // Ok(u64::from_le_bytes(amount_bytes))
+        Ok(kani::any())
     }
 
     // 1st byte of data is the mint key

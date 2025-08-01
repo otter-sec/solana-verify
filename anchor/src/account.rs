@@ -55,7 +55,7 @@ impl<'a, T: kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 
     }
 
     pub fn ensure_init(&self) {
-        self.info.init_as::<T>();
+        self.info.ensure_init_as::<T>();
     }
 
     pub fn as_invariant(&self) -> &dyn shared::Invariant<AccountInfo<'static>> {

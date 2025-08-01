@@ -70,7 +70,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> Ref<T> {
-        self.assert_init_as::<T>();
+        self.ensure_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
 
@@ -85,7 +85,7 @@ impl<'a> AccountInfo<'a> {
         &self,
     ) -> RefMut<T> {
         kani::assert(!self.disallow_mut, "raw AccountInfo data borrowed mutably");
-        self.assert_init_as::<T>();
+        self.ensure_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         RefMut::map(unsafe { r.try_borrow_mut().unwrap_unchecked() }, |x| {
@@ -101,7 +101,7 @@ impl<'a> AccountInfo<'a> {
     >(
         &self,
     ) -> &T {
-        self.assert_init_as::<T>();
+        self.ensure_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let t = unsafe { &**r.try_borrow().unwrap_unchecked() };
@@ -129,7 +129,7 @@ impl<'a> AccountInfo<'a> {
         &self,
     ) -> &mut T {
         kani::assert(!self.disallow_mut, "raw AccountInfo data borrowed mutably");
-        self.assert_init_as::<T>();
+        self.ensure_init_as::<T>();
 
         let r = unsafe { &*self.deserialized }.as_ref().unwrap();
         let mut t = unsafe { &mut **r.try_borrow().unwrap_unchecked() };
@@ -157,6 +157,18 @@ impl<'a> AccountInfo<'a> {
         let mut d = unsafe { &mut *self.deserialized };
         assert!(d.is_none());
         *d = Some(RefCell::new(Box::leak(Box::new(value)) as *mut _));
+    }
+
+    pub fn ensure_init_as<
+        T: Sized + kani::Arbitrary + Clone + shared::Invariant<AccountInfo<'static>> + 'static,
+    >(
+        &self,
+    ) {
+        let mut d = unsafe { &mut *self.deserialized };
+        if d.is_none() {
+            let t: T = kani::any();
+            *d = Some(RefCell::new(Box::leak(Box::new(t)) as *mut _));
+        }
     }
 
     pub fn assert_init_as<
